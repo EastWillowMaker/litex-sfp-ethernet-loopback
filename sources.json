@@ -1,0 +1,7 @@
+{
+  "litex": {"url": "https://github.com/eastWillow/litex.git", "commit": "b2759f69bcae8be0357fb2ee5eebe216365d1f00"},
+  "litex-boards": {"url": "https://github.com/eastWillow/litex-boards.git", "commit": "c2abe2465dbe72de385a4c8b453ffb31c2d86bbb"},
+  "liteeth": {"url": "https://github.com/enjoy-digital/liteeth.git", "commit": "c311f90f4b25b24be5bf3077e9ad37fcde6589a3"},
+  "liteiclink": {"url": "https://github.com/enjoy-digital/liteiclink.git", "commit": "6e69216944e94c69f5a7d58d5c6d75dc3d754242"},
+  "migen": {"url": "https://github.com/m-labs/migen.git", "commit": "e19524c963a8342952840983047557707fbe0b6a"}
+}

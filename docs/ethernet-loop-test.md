@@ -10,7 +10,7 @@
 - The initial test sends 1,000 frames of varied standard sizes, one at a time. Every expected reply must arrive with the correct payload; missing, duplicate, and corrupted replies are reported separately.
 - The user identifies the test host connection as the new USB Ethernet adapter attached to this PC.
 - Q9 accepts dedicated test-frame filtering, the five test sizes, UART counters, the one-second timeout, and the host report below.
-- Design questions are settled. Hardware implementation awaits final confirmation of this shared understanding under the invoked grilling skill.
+- The user confirmed the design by invoking `$implement With Subagents`; implementation is authorized.
 
 ## Source baseline
 
@@ -52,6 +52,7 @@ These are unresolved prerequisites, not accepted implementation choices.
 - `VivadoProgrammer.flash()` enables erase, programming, and verification over the image's address range. Its `address` argument is not applied in the generated script; offset zero in the generated image matches this target's existing usage.
 - Core schematic page 7 documents Master SPI x4 boot mode (`M[2:0]=001`).
 - Core schematic page 14 identifies U13 as `N25Q128A13ESE40G`, while the Pro hardware specification page 14 says `W25Q128`. Both specify 16 MiB; the actual flash ID must determine programmer selection. No flash operation has been performed.
+- Implementation inspection found SPI CS on T19 in core schematic page 8. The platform and Pro spreadsheet's T10 assignment fails Vivado pin placement. The dedicated test target uses T19 and leaves the original clones unchanged.
 
 ## Accepted test details
 
