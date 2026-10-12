@@ -83,6 +83,9 @@ class Clause22MDIO:
         for shift in range(count - 1, -1, -1):
             self._send_bit((value >> shift) & 1)
 
+    def _idle(self):
+        self._drive(clock=0, output_enable=0)
+
     def _sample_bit(self):
         self._drive(clock=0, output_enable=0)
         # RTL8211F updates MDIO on MDC's rising edge, so sample the current bit
@@ -98,6 +101,9 @@ class Clause22MDIO:
             raise ValueError("Clause 22 PHY address and register must be in 0..31")
 
     def _start(self, phy_address, register, opcode):
+        # Start with MDC low and MDIO released, independent of prior traffic or
+        # the CSR reset value, before the host begins the Clause 22 preamble.
+        self._idle()
         self._send_bits(0xFFFFFFFF, 32)
         self._send_bits(0b01, 2)
         self._send_bits(opcode, 2)
@@ -110,7 +116,14 @@ class Clause22MDIO:
         self._start(phy_address, register, opcode=0b10)
         self._sample_bit()  # Turnaround high-impedance bit.
         if self._sample_bit() != 0:
-            raise RuntimeError("MDIO PHY did not acknowledge the read")
+            # Complete the read data phase even when nobody drives the bus.
+            # This keeps MDC framing aligned for the next transaction.
+            for _ in range(16):
+                self._sample_bit()
+            self._idle()
+            raise RuntimeError(
+                f"MDIO PHY at address {phy_address} did not acknowledge register {register}"
+            )
         value = 0
         for _ in range(16):
             value = (value << 1) | self._sample_bit()

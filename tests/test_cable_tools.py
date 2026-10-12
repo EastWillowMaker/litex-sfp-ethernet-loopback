@@ -472,6 +472,49 @@ def test_clause22_mdio_samples_phy_before_rising_edge_advances_data():
     assert all(phase == (0, 0) for phase in phy_input.sample_phases)
 
 
+def test_clause22_no_ack_drains_read_frame_before_the_next_transaction():
+    class GPIO:
+        def __init__(self):
+            self.values = []
+
+        def write(self, value):
+            self.values.append(value)
+
+        def read(self):
+            return self.values[-1]
+
+    class PHYInput:
+        def __init__(self, gpio):
+            self.gpio = gpio
+            self.bits = [1] * 18 + [1, 0] + [
+                (0x001C >> shift) & 1 for shift in range(15, -1, -1)
+            ]
+            self.samples = 0
+
+        def read(self):
+            assert self.gpio.values[-1] & 0b11 == 0
+            self.samples += 1
+            return self.bits.pop(0) if self.bits else 1
+
+    gpio = GPIO()
+    phy_input = PHYInput(gpio)
+    mdio = cable_diagnostics.Clause22MDIO(
+        type("Regs", (), {"host_phy_mdio_w": gpio, "host_phy_mdio_r": phy_input})()
+    )
+
+    try:
+        mdio.read(31, 2)
+    except RuntimeError as error:
+        assert "did not acknowledge" in str(error)
+    else:
+        raise AssertionError("A PHY that released MDIO during turnaround was accepted")
+
+    assert mdio.read(0, 2) == 0x001C
+    assert phy_input.samples == 36
+    assert gpio.values[0] == 0b100
+    assert gpio.values[-1] == 0b100
+
+
 def test_rtl8211f_delay_configuration_preserves_other_bits_and_restores_page():
     class PHY:
         def __init__(self):
