@@ -13,3 +13,7 @@ An Ethernet frame belonging to this loopback test, identified by its test protoc
 
 **Correctness milestone**:
 The first test milestone, which establishes a reliable pass/fail result at low traffic before sustained-load testing.
+
+**Sustained correctness run**:
+A frame loopback test that continuously sends and verifies frames for a chosen interval. It checks reliability over time and records the observed rate of the test path.
+_Avoid_: Maximum-throughput test, line-rate test

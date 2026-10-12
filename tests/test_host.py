@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from sfp_loopback.host import make_frame, run_test, main
 
@@ -171,3 +172,178 @@ def test_cli_socket_close_failure_still_saves_a_failed_report(tmp_path):
     assert status == 2
     assert report['passed'] is False
     assert 'device disconnected on close' in report['errors'][0]
+
+
+class TimedCable(EthernetCable):
+    def __init__(self, delay=0.125):
+        super().__init__()
+        self.now = 0.0
+        self.delay = delay
+
+    def clock(self):
+        return self.now
+
+    def receive(self, timeout):
+        if self.packets:
+            packet = self.packets.pop(0)
+            if packet[1] != 4:
+                self.now += self.delay
+            return packet
+        self.now += timeout
+        return None
+
+
+def test_sustained_mode_cycles_sizes_until_deadline_and_reports_measured_rate():
+    cable = TimedCable()
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=0.75, clock=cable.clock)
+    assert report['passed'] is True
+    assert [len(frame) for frame in cable.sent] == [60, 128, 256, 512, 1514, 60]
+    assert report['mode'] == 'sustained_correctness'
+    assert report['requested_duration_seconds'] == 0.75
+    assert report['active_seconds'] == 0.75
+    assert report['elapsed_seconds'] == 1.75
+    assert report['sent'] == report['received'] == report['expected'] == 6
+    assert report['sent_bytes'] == report['received_bytes'] == 2530
+    assert report['frames_by_size'] == {'60': 2, '128': 1, '256': 1, '512': 1, '1514': 1}
+    assert report['received_mbps'] == 0.026987
+    assert report['received_frames_per_second'] == 8.0
+
+
+def test_sustained_missing_reply_finishes_current_timeout_then_final_drain():
+    class DisconnectedCable(TimedCable):
+        def send(self, frame):
+            self.sent.append(frame)
+
+    cable = DisconnectedCable()
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=0.25, clock=cable.clock)
+    assert report['passed'] is False
+    assert report['sent'] == report['missing'] == 1
+    assert report['active_seconds'] == 1.0
+    assert report['elapsed_seconds'] == 2.0
+    assert report['elapsed_seconds'] <= 0.25 + 1.0 + 1.0
+
+
+def test_sustained_recognizes_a_duplicate_from_far_earlier_in_the_run():
+    class DelayedDuplicateCable(TimedCable):
+        def send(self, frame):
+            super().send(frame)
+            if len(self.sent) == 1200:
+                first = self.sent[0]
+                self.packets.append((bytes.fromhex('102030405060020000000002') + first[12:], 0))
+
+    cable = DelayedDuplicateCable(delay=0.001)
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=1.5, clock=cable.clock)
+    assert report['sent'] > 1200
+    assert report['received'] == report['sent']
+    assert report['duplicate'] == 1
+    assert report['passed'] is False
+
+
+def test_timed_cli_saves_duration_and_measured_rate_in_report(tmp_path):
+    usb_interface(tmp_path)
+    report_path = tmp_path / 'report.json'
+
+    class Cable(TimedCable):
+        def close(self):
+            pass
+
+    cable = Cable()
+    status = main(['--interface', 'enxtest', '--report', str(report_path),
+                   '--duration', '0.75'], interface_root=tmp_path,
+                  transport_factory=lambda name: cable, clock=cable.clock)
+    report = json.loads(report_path.read_text())
+    assert status == 0
+    assert report['passed'] is True
+    assert report['completed'] is True
+    assert report['requested_duration_seconds'] == report['active_seconds'] == 0.75
+    assert report['sent'] == report['received'] == 6
+    assert report['frames_per_size'] is None
+    assert report['received_mbps'] == 0.026987
+
+
+@pytest.mark.parametrize('duration', ['nan', 'inf', '0', '-1'])
+def test_cli_invalid_duration_saves_failure_artifact(tmp_path, duration):
+    report_path = tmp_path / 'report.json'
+    status = main(['--interface', 'enxmissing', '--report', str(report_path),
+                   '--duration', duration], interface_root=tmp_path)
+    report = json.loads(report_path.read_text())
+    assert status == 2
+    assert report['passed'] is False
+    assert 'Duration must be a finite positive number' in report['errors'][0]
+
+
+def test_late_reply_to_a_timed_out_sequence_is_unexpected_not_duplicate():
+    class LateCable(TimedCable):
+        def send(self, frame):
+            super().send(frame)
+            if len(self.sent) == 1:
+                self.packets.clear()
+            elif len(self.sent) == 2:
+                first = self.sent[0]
+                self.packets.insert(0, (bytes.fromhex('102030405060020000000002') + first[12:], 0))
+
+    cable = LateCable()
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=1.5, clock=cable.clock)
+    assert report['missing'] == report['unexpected'] == 1
+    assert report['duplicate'] == 0
+    assert report['received'] == report['sent'] - 1
+    assert report['passed'] is False
+
+
+def test_timed_cli_interruption_saves_partial_counts_and_cannot_pass(tmp_path):
+    usb_interface(tmp_path)
+    report_path = tmp_path / 'report.json'
+
+    class InterruptedCable(TimedCable):
+        def receive(self, timeout):
+            if len(self.sent) == 3:
+                raise KeyboardInterrupt
+            return super().receive(timeout)
+
+        def close(self):
+            pass
+
+    cable = InterruptedCable()
+    status = main(['--interface', 'enxtest', '--report', str(report_path),
+                   '--duration', '60'], interface_root=tmp_path,
+                  transport_factory=lambda name: cable, clock=cable.clock)
+    report = json.loads(report_path.read_text())
+    assert status == 1
+    assert report['passed'] is report['completed'] is False
+    assert report['sent'] == 3
+    assert report['received'] == 2
+    assert report['active_seconds'] == 0.25
+    assert report['errors'] == ['Test interrupted']
+
+
+def test_duration_with_no_sent_frames_cannot_pass():
+    cable = TimedCable()
+    times = iter([0.0, 2.0])
+
+    def jumped_clock():
+        return next(times, 2.0)
+
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=0.75, clock=jumped_clock)
+    assert report['sent'] == report['received'] == 0
+    assert report['passed'] is False
+
+
+def test_sustained_transport_failure_retains_partial_report_and_cannot_pass():
+    class BrokenCable(TimedCable):
+        def receive(self, timeout):
+            if len(self.sent) == 3:
+                raise OSError('USB adapter disconnected')
+            return super().receive(timeout)
+
+    cable = BrokenCable()
+    report = run_test(cable, bytes.fromhex('102030405060'), 42,
+                      duration_seconds=60, clock=cable.clock)
+    assert report['sent'] == 3
+    assert report['received'] == 2
+    assert report['passed'] is report['completed'] is False
+    assert report['errors'] == ['OSError: USB adapter disconnected']

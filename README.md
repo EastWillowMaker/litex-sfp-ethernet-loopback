@@ -75,6 +75,21 @@ failure. Sizes are 60, 128, 256, 512 and 1514 bytes excluding FCS, with 200
 frames per size and a one-second reply timeout. A final receive interval
 checks for trailing duplicates.
 
+To keep sending and checking replies for 60 seconds, cycling all five sizes:
+
+```bash
+sudo .venv/bin/python -m sfp_loopback.host \
+  --interface enx98fc84e0c4e8 --duration 60 \
+  --report artifacts/host-sustained.json
+```
+
+The timed run finishes its outstanding reply and final duplicate check after
+the sending deadline. Its report includes traffic duration, counts by size,
+and observed frame rate and Mbps excluding FCS, preamble, and inter-frame gap.
+These measurements describe the stop-and-wait test path; maximum throughput
+needs a separate burst test. Expected reply bytes are reconstructed, so
+successful traffic does not accumulate a history in memory.
+
 If the USB adapter disappears, inspect the kernel journal and reconnect it.
 If carrier remains absent, check `lock`, `tx_ready`, `rx_ready`, `link` and
 `loss_of_signal` in the UART report before attempting the frame test.
