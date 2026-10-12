@@ -139,6 +139,7 @@ def main(argv=None, *, interface_root=Path("/sys/class/net"),
             raise RuntimeError("Host Ethernet interface must have carrier at 1000 Mbps")
         with bus_factory(args.port, csr_csv=str(args.csr_csv)) as bus:
             hardware = report["hardware_evidence"]
+            phy_mdio = Clause22MDIO(bus.regs)
             try:
                 bus.regs.cable_control_enable.write(0)
                 _wait_not_busy(bus.regs, clock=clock, sleep=sleep)
@@ -155,7 +156,7 @@ def main(argv=None, *, interface_root=Path("/sys/class/net"),
                        or hardware["status_before"][f"sfp{port}_control_tx_disable"]
                        for port in (0, 1)):
                     raise RuntimeError("An SFP reports loss of signal or transmit disabled")
-                hardware["rtl8211f_before"] = phy_status_reader(Clause22MDIO(bus.regs))
+                hardware["rtl8211f_before"] = phy_status_reader(phy_mdio)
                 if not hardware["rtl8211f_before"]["link_up"]:
                     raise RuntimeError("RTL8211F reports no copper link")
                 if not hardware["rtl8211f_before"]["delay_configuration_passed"]:
@@ -187,7 +188,7 @@ def main(argv=None, *, interface_root=Path("/sys/class/net"),
                     if bus.regs.cable_control_enable.read() != 0:
                         raise RuntimeError("Cable control did not disable after the run")
                     hardware["status_after"] = read_cable_status(bus)
-                    hardware["rtl8211f_after"] = phy_status_reader(Clause22MDIO(bus.regs))
+                    hardware["rtl8211f_after"] = phy_status_reader(phy_mdio)
                     if "status_before" in hardware and report["host_result"] is not None:
                         hardware.update(_evaluate_hardware(
                             hardware["status_before"], hardware["status_after"],

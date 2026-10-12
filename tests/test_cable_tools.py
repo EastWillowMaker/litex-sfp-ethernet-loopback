@@ -98,7 +98,8 @@ class CableTransport:
         pass
 
 
-def run(tmp_path, bus, *, direction="sfp1-to-sfp2", route_frames=True, reply=True):
+def run(tmp_path, bus, *, direction="sfp1-to-sfp2", route_frames=True, reply=True,
+        phy_status_reader=good_phy_status):
     usb_interface(tmp_path)
     report_path = tmp_path / "cable.json"
     transport = CableTransport(bus, route_frames=route_frames, reply=reply)
@@ -108,7 +109,7 @@ def run(tmp_path, bus, *, direction="sfp1-to-sfp2", route_frames=True, reply=Tru
         interface_root=tmp_path,
         bus_factory=lambda *args, **kwargs: bus,
         transport_factory=lambda name: transport,
-        phy_status_reader=good_phy_status,
+        phy_status_reader=phy_status_reader,
     )
     return status, json.loads(report_path.read_text()), bus
 
@@ -170,6 +171,26 @@ def test_reverse_direction_checks_the_opposite_sfp_route(tmp_path):
         "sfp0_tx_frames": 0,
         "sfp1_return_rx_frames": 0,
     }
+
+
+def test_cable_run_reuses_discovered_phy_address_for_after_snapshot(tmp_path):
+    bus = CableBus()
+    readers = []
+
+    def phy_status_reader(mdio):
+        if readers:
+            assert mdio is readers[0]
+            assert mdio.phy_address == 3
+        else:
+            mdio.phy_address = 3
+        readers.append(mdio)
+        return good_phy_status(mdio)
+
+    status, report, _ = run(tmp_path, bus, phy_status_reader=phy_status_reader)
+
+    assert status == 0
+    assert report["hardware_evidence"]["rtl8211f_status_passed"] is True
+    assert len(readers) == 2
 
 
 def test_sustained_cable_mode_runs_the_full_60_seconds_in_one_direction(tmp_path):
@@ -519,6 +540,88 @@ def test_clause22_no_ack_drains_read_frame_before_the_next_transaction():
     assert phy_input.samples == 36
     assert gpio.values[0] == 0b100
     assert gpio.values[-1] == 0b100
+
+
+def test_phy_discovery_requires_one_verified_nonbroadcast_rtl8211f():
+    class MDIO:
+        def __init__(self, devices):
+            self.devices = devices
+            self.reads = []
+
+        def read(self, address, register):
+            self.reads.append((address, register))
+            if address not in self.devices:
+                raise cable_diagnostics.MDIONoAcknowledge(address, register)
+            return self.devices[address].get(register, 0xFFFF)
+
+    phy_registers = {2: 0x001C, 3: 0xC916}
+    single = MDIO({3: phy_registers})
+
+    assert cable_diagnostics.discover_rtl8211f_address(single) == 3
+    assert {address for address, _ in single.reads} == set(range(1, 32))
+    assert all(address != 0 for address, _ in single.reads)
+
+    try:
+        cable_diagnostics.discover_rtl8211f_address(MDIO({}))
+    except RuntimeError as error:
+        assert "No RTL8211F" in str(error)
+    else:
+        raise AssertionError("Discovery accepted a bus with no RTL8211F")
+
+    try:
+        cable_diagnostics.discover_rtl8211f_address(
+            MDIO({3: phy_registers, 7: phy_registers})
+        )
+    except RuntimeError as error:
+        assert "Multiple RTL8211F" in str(error)
+    else:
+        raise AssertionError("Discovery silently selected among duplicate PHY identities")
+
+
+def test_discovered_phy_address_is_used_for_status_and_delay_page_accesses():
+    class PHY:
+        def __init__(self):
+            self.phy_address = None
+            self.page = 0x0007
+            self.reads = []
+            self.writes = []
+            self.pages = {
+                0x0007: {2: 0x001C, 3: 0xC916, 0: 0x1140, 1: 0x796D},
+                0x0D08: {0x11: 0x814A, 0x15: 0x80A3},
+            }
+
+        def read(self, address, register):
+            self.reads.append((address, register))
+            if address != 3:
+                raise cable_diagnostics.MDIONoAcknowledge(address, register)
+            if register == cable_diagnostics.RTL8211F_PAGE_REGISTER:
+                return self.page
+            return self.pages.setdefault(self.page, {}).get(register, 0)
+
+        def write(self, address, register, value):
+            self.writes.append((address, register, value))
+            assert address == 3
+            if register == cable_diagnostics.RTL8211F_PAGE_REGISTER:
+                self.page = value
+            else:
+                self.pages.setdefault(self.page, {})[register] = value
+
+    phy = PHY()
+
+    status = cable_diagnostics.read_rtl8211f_status(phy)
+    assert status["phy_address"] == 3
+    assert phy.phy_address == 3
+    last_scan_read = max(
+        index for index, (address, _) in enumerate(phy.reads) if address != 3
+    )
+    assert all(address == 3 for address, _ in phy.reads[last_scan_read + 1:])
+
+    phy.reads.clear()
+    phy.writes.clear()
+    configured = cable_diagnostics.configure_rtl8211f_delays(phy)
+    assert configured["phy_address"] == 3
+    assert all(address == 3 for address, _ in phy.reads)
+    assert all(address == 3 for address, _, _ in phy.writes)
 
 
 def test_rtl8211f_delay_configuration_preserves_other_bits_and_restores_page():

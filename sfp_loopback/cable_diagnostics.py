@@ -19,6 +19,8 @@ RTL8211F_TX_DELAY_REGISTER = 0x11
 RTL8211F_TX_DELAY_BIT = 1 << 8
 RTL8211F_RX_DELAY_REGISTER = 0x15
 RTL8211F_RX_DELAY_BIT = 1 << 3
+FIRST_NONBROADCAST_PHY_ADDRESS = 1
+LAST_PHY_ADDRESS = 31
 
 
 def _status_names():
@@ -72,6 +74,7 @@ class Clause22MDIO:
     def __init__(self, regs):
         self._write_csr = regs.host_phy_mdio_w
         self._read_csr = regs.host_phy_mdio_r
+        self.phy_address: int | None = None
 
     def _drive(self, *, clock, output_enable, value=1):
         # LiteEth declares CSR fields in mdc, oe, w order.
@@ -123,9 +126,7 @@ class Clause22MDIO:
             for _ in range(16):
                 self._sample_bit()
             self._idle()
-            raise RuntimeError(
-                f"MDIO PHY at address {phy_address} did not acknowledge register {register}"
-            )
+            raise MDIONoAcknowledge(phy_address, register)
         value = 0
         for _ in range(16):
             value = (value << 1) | self._sample_bit()
@@ -143,9 +144,61 @@ class Clause22MDIO:
         self._drive(clock=0, output_enable=0)
 
 
+class MDIONoAcknowledge(RuntimeError):
+    """A Clause 22 read reached turnaround without a PHY response."""
+
+    def __init__(self, phy_address: int, register: int):
+        self.phy_address = phy_address
+        self.register = register
+        super().__init__(
+            f"MDIO PHY at address {phy_address} did not acknowledge register {register}"
+        )
+
+
+def discover_rtl8211f_address(mdio):
+    """Find the unique RTL8211F at a nonbroadcast Clause 22 address."""
+    matches = []
+    for address in range(FIRST_NONBROADCAST_PHY_ADDRESS, LAST_PHY_ADDRESS + 1):
+        try:
+            id1 = mdio.read(address, 2)
+        except MDIONoAcknowledge:
+            continue
+        if id1 != (RTL8211F_ID >> 16):
+            continue
+        try:
+            id2 = mdio.read(address, 3)
+        except MDIONoAcknowledge:
+            continue
+        phy_id = (id1 << 16) | id2
+        if (phy_id & RTL8211F_ID_MASK) == (RTL8211F_ID & RTL8211F_ID_MASK):
+            matches.append(address)
+    if not matches:
+        raise RuntimeError(
+            "No RTL8211F found at nonbroadcast MDIO addresses 1..31"
+        )
+    if len(matches) > 1:
+        addresses = ", ".join(str(address) for address in matches)
+        raise RuntimeError(f"Multiple RTL8211F devices found at MDIO addresses {addresses}")
+    return matches[0]
+
+
+def _selected_phy_address(mdio):
+    # Keep simple fake/legacy MDIO objects usable without triggering discovery.
+    if not hasattr(mdio, "phy_address"):
+        return PHY_ADDRESS
+    address = mdio.phy_address
+    if address is None:
+        address = discover_rtl8211f_address(mdio)
+        mdio.phy_address = address
+    if not FIRST_NONBROADCAST_PHY_ADDRESS <= address <= LAST_PHY_ADDRESS:
+        raise ValueError("RTL8211F address must be a nonbroadcast Clause 22 address in 1..31")
+    return address
+
+
 def _rtl8211f_identity(mdio):
-    id1 = mdio.read(PHY_ADDRESS, 2)
-    id2 = mdio.read(PHY_ADDRESS, 3)
+    address = _selected_phy_address(mdio)
+    id1 = mdio.read(address, 2)
+    id2 = mdio.read(address, 3)
     phy_id = (id1 << 16) | id2
     if (phy_id & RTL8211F_ID_MASK) != (RTL8211F_ID & RTL8211F_ID_MASK):
         raise RuntimeError(f"PHY ID {phy_id:08x} is not an RTL8211F")
@@ -153,39 +206,41 @@ def _rtl8211f_identity(mdio):
 
 
 @contextmanager
-def _selected_phy_page(mdio, selected_page: int) -> Iterator[int]:
-    prior_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
+def _selected_phy_page(mdio, selected_page: int, phy_address: int) -> Iterator[int]:
+    prior_page = mdio.read(phy_address, RTL8211F_PAGE_REGISTER)
     try:
-        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, selected_page)
-        actual_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
+        mdio.write(phy_address, RTL8211F_PAGE_REGISTER, selected_page)
+        actual_page = mdio.read(phy_address, RTL8211F_PAGE_REGISTER)
         if actual_page != selected_page:
             raise RuntimeError(
                 f"PHY page select failed: {actual_page:04x} != {selected_page:04x}"
             )
         yield prior_page
     finally:
-        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, prior_page)
-        restored_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
+        mdio.write(phy_address, RTL8211F_PAGE_REGISTER, prior_page)
+        restored_page = mdio.read(phy_address, RTL8211F_PAGE_REGISTER)
         if restored_page != prior_page:
             raise RuntimeError(f"PHY page restore failed: {restored_page:04x} != {prior_page:04x}")
 
 
 def _read_delay_registers(mdio):
-    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE) as prior_page:
-        tx = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
-        rx = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
+    phy_address = _selected_phy_address(mdio)
+    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE, phy_address) as prior_page:
+        tx = mdio.read(phy_address, RTL8211F_TX_DELAY_REGISTER)
+        rx = mdio.read(phy_address, RTL8211F_RX_DELAY_REGISTER)
     return prior_page, tx, rx
 
 
 def read_rtl8211f_status(mdio):
     """Read PHY identity, control/link state, and the documented RGMII delays."""
     id1, id2, phy_id = _rtl8211f_identity(mdio)
-    bmcr = mdio.read(PHY_ADDRESS, 0)
-    bmsr_latched = mdio.read(PHY_ADDRESS, 1)
-    bmsr = mdio.read(PHY_ADDRESS, 1)
+    phy_address = _selected_phy_address(mdio)
+    bmcr = mdio.read(phy_address, 0)
+    bmsr_latched = mdio.read(phy_address, 1)
+    bmsr = mdio.read(phy_address, 1)
     page, tx, rx = _read_delay_registers(mdio)
     return {
-        "phy_address": PHY_ADDRESS,
+        "phy_address": phy_address,
         "phy_id": f"{phy_id:08x}",
         "phy_id1": f"{id1:04x}",
         "phy_id2": f"{id2:04x}",
@@ -207,18 +262,20 @@ def read_rtl8211f_status(mdio):
 def configure_rtl8211f_delays(mdio):
     """Clear PHY-internal TX delay, enable RX delay, and restore the page."""
     _rtl8211f_identity(mdio)
-    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE) as prior_page:
-        tx_before = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
-        rx_before = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
+    phy_address = _selected_phy_address(mdio)
+    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE, phy_address) as prior_page:
+        tx_before = mdio.read(phy_address, RTL8211F_TX_DELAY_REGISTER)
+        rx_before = mdio.read(phy_address, RTL8211F_RX_DELAY_REGISTER)
         tx_after = tx_before & ~RTL8211F_TX_DELAY_BIT
         rx_after = rx_before | RTL8211F_RX_DELAY_BIT
-        mdio.write(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER, tx_after)
-        mdio.write(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER, rx_after)
-        tx_verified = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
-        rx_verified = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
+        mdio.write(phy_address, RTL8211F_TX_DELAY_REGISTER, tx_after)
+        mdio.write(phy_address, RTL8211F_RX_DELAY_REGISTER, rx_after)
+        tx_verified = mdio.read(phy_address, RTL8211F_TX_DELAY_REGISTER)
+        rx_verified = mdio.read(phy_address, RTL8211F_RX_DELAY_REGISTER)
         if tx_verified != tx_after or rx_verified != rx_after:
             raise RuntimeError("RTL8211F RGMII delay register readback did not match")
     return {
+        "phy_address": phy_address,
         "page_restored": f"{prior_page:04x}",
         "tx_register_before": f"{tx_before:04x}",
         "tx_register_after": f"{tx_verified:04x}",
