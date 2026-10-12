@@ -10,6 +10,17 @@ from litex.tools.remote.comm_uart import CommUART
 class BoundedUART(CommUART):
     """Fail clearly if UART gateware is absent instead of waiting indefinitely."""
 
+    def __init__(self, port, **kwargs):
+        super().__init__(port, **kwargs)
+        self.port.timeout = 2
+        self.port.write_timeout = 2
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exception):
+        self.close()
+
     def _read(self, length):
         result = bytearray()
         while len(result) < length:
@@ -30,12 +41,10 @@ def read_status(bus):
     return result
 
 
-def read_flash_id(bus):
-    """Issue only JEDEC read-ID (0x9f); never send write/erase commands."""
-    bus.regs.spiflash_spi_cs.write(1)
-    # The raw 40-bit SPI shifter starts at bit39; send opcode then24 dummy bits.
-    bus.regs.spiflash_spi_mosi.write(0x9F << 32)
-    bus.regs.spiflash_spi_control.write((32 << 8) | 1)
+def _spi_transfer(bus, value, length, chip_select):
+    bus.regs.spiflash_spi_cs.write(chip_select)
+    bus.regs.spiflash_spi_mosi.write(value)
+    bus.regs.spiflash_spi_control.write((length << 8) | 1)
     deadline = time.monotonic() + 2.0
     while True:
         status = bus.regs.spiflash_spi_status.read()
@@ -45,7 +54,16 @@ def read_flash_id(bus):
             break
         if time.monotonic() >= deadline:
             raise TimeoutError("SPI read-ID did not finish.")
-    identity = bus.regs.spiflash_spi_miso.read() & 0xFFFFFF
+    return bus.regs.spiflash_spi_miso.read() & 0xFFFFFF
+
+
+def read_flash_id(bus):
+    """Issue only JEDEC read-ID (0x9f); never send write/erase commands."""
+    # STARTUPE2 consumes initial clock edges when taking over configuration CCLK.
+    # Prime it with CS inactive so the first opcode reaches the flash intact.
+    _spi_transfer(bus, 0, 8, chip_select=0)
+    # The raw 40-bit SPI shifter starts at bit39; send opcode then24 dummy bits.
+    identity = _spi_transfer(bus, 0x9F << 32, 32, chip_select=1)
     if identity in (0, 0xFFFFFF):
         raise RuntimeError(f"Invalid flash response {identity:06x}; do not program flash.")
     return f"{identity:06x}"
@@ -58,10 +76,7 @@ def main():
     parser.add_argument("--flash-id", action="store_true")
     parser.add_argument("--output", help="Save the status as JSON.")
     args = parser.parse_args()
-    bus = BoundedUART(args.port, csr_csv=args.csr_csv)
-    bus.port.timeout = 2
-    bus.port.write_timeout = 2
-    try:
+    with BoundedUART(args.port, csr_csv=args.csr_csv) as bus:
         result = read_status(bus)
         if args.flash_id:
             result["flash_jedec_id"] = read_flash_id(bus)
@@ -70,8 +85,6 @@ def main():
         if args.output:
             from pathlib import Path
             Path(args.output).write_text(report + "\n")
-    finally:
-        bus.close()
 
 
 if __name__ == "__main__":

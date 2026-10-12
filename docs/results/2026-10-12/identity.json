@@ -1,0 +1,16 @@
+{
+  "link": 1,
+  "lock": 1,
+  "tx_ready": 1,
+  "rx_ready": 1,
+  "loss_of_signal": 0,
+  "rx_frames": 0,
+  "tx_frames": 0,
+  "rejected_frames": 1765,
+  "error_frames": 1642,
+  "overflow_frames": 0,
+  "mac_rx_datapath_crc_errors": 2620,
+  "mac_rx_datapath_preamble_errors": 2343350,
+  "mac_rx_datapath_drops": 9,
+  "flash_jedec_id": "20ba18"
+}

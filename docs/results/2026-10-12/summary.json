@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-12",
+  "board": "EmbedFire Rise Pro XC7A35T-FGG484-2",
+  "module": "Dawnray SFP-GE-T",
+  "sfp_resource": 1,
+  "interface": "enx98fc84e0c4e8",
+  "link_speed_mbps": 1000,
+  "flash_jedec_id": "20ba18",
+  "flash_program_verify_passed": true,
+  "spi_boot_verified": true,
+  "original_flash_wrapper_exit": 1,
+  "original_flash_wrapper_failure": "Vivado boot_hw_device returned an empty string despite DONE=1; corrected script and separately verified SPI boot without another erase.",
+  "post_flash_loopback_passed": true,
+  "frames_sent": 1000,
+  "frames_verified": 1000,
+  "board_counter_deltas": {
+    "rx_frames": 1000,
+    "tx_frames": 1000,
+    "rejected_frames": 24,
+    "error_frames": 0,
+    "overflow_frames": 0,
+    "mac_rx_datapath_crc_errors": 0,
+    "mac_rx_datapath_preamble_errors": 0,
+    "mac_rx_datapath_drops": 0
+  },
+  "fpga_timing": {
+    "setup_slack_ns": 1.358,
+    "hold_slack_ns": 0.079,
+    "unclocked_registers": 0,
+    "unconstrained_internal_endpoints": 0
+  },
+  "test_suite": {
+    "passed": 39,
+    "duration_seconds": 111.63
+  },
+  "typecheck": "passed (7 first-party files)",
+  "image_sha256": {
+    "bit": "4f17505d95a9519d349cfdf603984058e302d814820e3fe3a4f8d7d420c10369",
+    "bin": "344e8a71e8df62b9aed7e17fc65210eda6e58906602835da85f02d3a1c3ed3b9"
+  }
+}

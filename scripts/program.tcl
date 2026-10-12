@@ -15,7 +15,12 @@ proc run {} {
         program_hw_devices $dev
     } elseif {$operation eq "flash"} {
         set parts [get_cfgmem_parts $flash_part]
-        if {[llength $parts] != 1} {error "Unrecognized configuration-memory part"}
+        puts "FLASH_PART_REQUEST=$flash_part MATCHES=[llength $parts] PARTS=$parts"
+        if {[llength $parts] == 0} {error "Unrecognized configuration-memory part"}
+        # Vivado 2025.2 can return multiple identical database entries.
+        foreach name [get_property NAME $parts] {
+            if {$name ne $flash_part} {error "Ambiguous configuration-memory part"}
+        }
         create_hw_cfgmem -hw_device $dev -mem_dev [lindex $parts 0]
         set mem [get_property PROGRAM.HW_CFGMEM $dev]
         set_property PROGRAM.ADDRESS_RANGE use_file $mem
@@ -29,13 +34,21 @@ proc run {} {
         create_hw_bitstream -hw_device $dev [get_property PROGRAM.HW_CFGMEM_BITFILE $dev]
         program_hw_devices $dev
         program_hw_cfgmem $mem
-        if {[boot_hw_device -timeout 30 $dev] != 1} {error "SPI boot did not assert DONE"}
+        boot_hw_device -timeout 30 $dev
     } elseif {$operation eq "boot"} {
-        if {[boot_hw_device -timeout 30 $dev] != 1} {error "SPI boot did not assert DONE"}
+        boot_hw_device -timeout 30 $dev
     } else {
         error "Unknown programming operation"
     }
     refresh_hw_device $dev
+    # Vivado 2025.2 returns an empty string from boot_hw_device even on success.
+    # Confirm hardware state rather than relying on its documented return value.
+    if {[get_property REGISTER.CONFIG_STATUS.BIT14_DONE_PIN $dev] != 1} {
+        error "Configuration did not assert DONE"
+    }
+    if {[get_property REGISTER.CONFIG_STATUS.BIT00_CRC_ERROR $dev] != 0} {
+        error "Configuration CRC error"
+    }
     puts "CONFIGURATION_STATUS: [get_property REGISTER.CONFIG_STATUS $dev]"
     close_hw_manager
 }

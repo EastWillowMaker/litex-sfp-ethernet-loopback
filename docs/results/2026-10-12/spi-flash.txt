@@ -1,0 +1,96 @@
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Mon Oct 12 22:06:22 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source /home/eastwillow/Documents/litex-network-router/scripts/program.tcl
+# proc run {} {
+#     global argv
+#     lassign $argv operation image target flash_part
+#     open_hw_manager
+#     connect_hw_server -url localhost:3121
+#     open_hw_target $target
+#     set devices [get_hw_devices xc7a35t_0]
+#     if {[llength $devices] != 1} {error "Expected exactly one XC7A35T"}
+#     set dev [lindex $devices 0]
+#     current_hw_device $dev
+#     refresh_hw_device $dev
+#     if {$operation eq "load"} {
+#         set_property PROGRAM.FILE $image $dev
+#         program_hw_devices $dev
+#     } elseif {$operation eq "flash"} {
+#         set parts [get_cfgmem_parts $flash_part]
+#         puts "FLASH_PART_REQUEST=$flash_part MATCHES=[llength $parts] PARTS=$parts"
+#         if {[llength $parts] == 0} {error "Unrecognized configuration-memory part"}
+#         # Vivado 2025.2 can return multiple identical database entries.
+#         foreach name [get_property NAME $parts] {
+#             if {$name ne $flash_part} {error "Ambiguous configuration-memory part"}
+#         }
+#         create_hw_cfgmem -hw_device $dev -mem_dev [lindex $parts 0]
+#         set mem [get_property PROGRAM.HW_CFGMEM $dev]
+#         set_property PROGRAM.ADDRESS_RANGE use_file $mem
+#         set_property PROGRAM.BIN_OFFSET 0 $mem
+#         set_property PROGRAM.FILES [list $image] $mem
+#         set_property PROGRAM.UNUSED_PIN_TERMINATION pull-none $mem
+#         set_property PROGRAM.BLANK_CHECK 0 $mem
+#         set_property PROGRAM.ERASE 1 $mem
+#         set_property PROGRAM.CFG_PROGRAM 1 $mem
+#         set_property PROGRAM.VERIFY 1 $mem
+#         create_hw_bitstream -hw_device $dev [get_property PROGRAM.HW_CFGMEM_BITFILE $dev]
+#         program_hw_devices $dev
+#         program_hw_cfgmem $mem
+#         if {[boot_hw_device -timeout 30 $dev] != 1} {error "SPI boot did not assert DONE"}
+#     } elseif {$operation eq "boot"} {
+#         if {[boot_hw_device -timeout 30 $dev] != 1} {error "SPI boot did not assert DONE"}
+#     } else {
+#         error "Unknown programming operation"
+#     }
+#     refresh_hw_device $dev
+#     puts "CONFIGURATION_STATUS: [get_property REGISTER.CONFIG_STATUS $dev]"
+#     close_hw_manager
+# }
+# if {[catch {run} message]} {
+#     puts stderr "Programming failed: $message"
+#     exit 1
+# }
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+****** Xilinx hw_server v2025.2
+  **** Build date : Oct 28 2025 at 16:07:00
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+
+
+INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
+INFO: [Labtools 27-3417] Launching cs_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+
+******** Xilinx cs_server v2025.2.0
+  ****** Build date   : Nov 14 2025-07:16:52
+    **** Build number : 2025.2.1763075812
+      ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
+      ** Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+
+
+
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210357A7D00EA
+INFO: [Labtools 27-1434] Device xc7a35t (JTAG device index = 0) is programmed with a design that has no supported soft debug core(s) in it.
+FLASH_PART_REQUEST=mt25ql128-spi-x1_x2_x4 MATCHES=7 PARTS=mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4 mt25ql128-spi-x1_x2_x4
+INFO: [Labtools 27-3164] End of startup status: HIGH
+Mfg ID : 20   Memory Type : ba   Memory Capacity : 18   Device ID 1 : 0   Device ID 2 : 0
+Performing Erase Operation...
+Erase Operation successful.
+Performing Program and Verify Operations...
+Program/Verify Operation successful.
+INFO: [Labtoolstcl 44-377] Flash programming completed successfully
+program_hw_cfgmem: Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:51 . Memory (MB): peak = 1638.742 ; gain = 0.000 ; free physical = 3996 ; free virtual = 11067
+INFO: [Labtoolstcl 44-664] Will wait up to 30 seconds for booting to complete.
+INFO: [Labtools 27-32] Done pin status: HIGH
+Programming failed: SPI boot did not assert DONE
+INFO: [Common 17-206] Exiting Vivado at Mon Oct 12 22:07:21 2026...

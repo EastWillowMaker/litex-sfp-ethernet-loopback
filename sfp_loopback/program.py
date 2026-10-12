@@ -37,43 +37,33 @@ def main():
     if not args.boot and not image.is_file():
         parser.error(f"Build the image first: {image}")
     report = {"operation": operation, "image": str(image.resolve()), "target": args.target}
-    flash_part = ""
-    if args.flash:
-        bus = BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv"))
-        bus.port.timeout = 2
-        bus.port.write_timeout = 2
-        try:
-            flash_id = read_flash_id(bus)
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    log = args.report.with_suffix(".log")
+    report["passed"] = False
+    try:
+        flash_part = ""
+        if args.flash:
+            with BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv")) as bus:
+                flash_id = read_flash_id(bus)
             report["flash_jedec_id"] = flash_id
             if flash_id not in FLASH_PARTS:
                 raise RuntimeError(f"Unsupported flash ID {flash_id}; no flash operation performed.")
             flash_part = FLASH_PARTS[flash_id]
             report["flash_part"] = flash_part
-        finally:
-            bus.close()
-    if not args.boot:
-        report["image_sha256"] = hashlib.sha256(image.read_bytes()).hexdigest()
-    script = Path(__file__).resolve().parent.parent / "scripts/program.tcl"
-    # Always preserve logs and a failed report if Vivado fails.
-    args.report.parent.mkdir(parents=True, exist_ok=True)
-    log = args.report.with_suffix(".log")
-    with log.open("w") as stream:
-        result = subprocess.run([vivado, "-mode", "batch", "-nolog", "-nojournal",
-            "-source", str(script), "-tclargs", operation, str(image.resolve()),
-            args.target, flash_part], stdout=stream, stderr=subprocess.STDOUT)
-    report["vivado_returncode"] = result.returncode
-    report["passed"] = result.returncode == 0
-    if result.returncode == 0:
-        bus = BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv"))
-        bus.port.timeout = 2
-        bus.port.write_timeout = 2
-        try:
-            report["status_after_boot"] = read_status(bus)
-        except (OSError, TimeoutError) as error:
-            report["passed"] = False
-            report["error"] = str(error)
-        finally:
-            bus.close()
+        if not args.boot:
+            report["image_sha256"] = hashlib.sha256(image.read_bytes()).hexdigest()
+        script = Path(__file__).resolve().parent.parent / "scripts/program.tcl"
+        with log.open("w") as stream:
+            result = subprocess.run([vivado, "-mode", "batch", "-nolog", "-nojournal",
+                "-source", str(script), "-tclargs", operation, str(image.resolve()),
+                args.target, flash_part], stdout=stream, stderr=subprocess.STDOUT)
+        report["vivado_returncode"] = result.returncode
+        if result.returncode == 0:
+            with BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv")) as bus:
+                report["status_after_boot"] = read_status(bus)
+            report["passed"] = True
+    except (OSError, RuntimeError, ValueError) as error:
+        report["error"] = f"{type(error).__name__}: {error}"
     args.report.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     print(f"Vivado log: {log}")

@@ -1,0 +1,27 @@
+{
+  "interface": "enx98fc84e0c4e8",
+  "passed": true,
+  "errors": [],
+  "run_id": "923566658ece1ca3",
+  "expected": 1000,
+  "sent": 1000,
+  "received": 1000,
+  "missing": 0,
+  "duplicate": 0,
+  "corrupt": 0,
+  "stale": 0,
+  "unexpected": 0,
+  "ignored": 0,
+  "elapsed_seconds": 1.135211,
+  "host_mac": "98:fc:84:e0:c4:e8",
+  "timestamp_utc": "2026-10-12T14:09:46Z",
+  "frame_sizes": [
+    60,
+    128,
+    256,
+    512,
+    1514
+  ],
+  "frames_per_size": 200,
+  "timeout_seconds": 1.0
+}

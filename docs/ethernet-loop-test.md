@@ -19,14 +19,14 @@
 - `litex-boards/litex_boards/targets/embedfire_rise_pro.py` uses `LiteEthPHYMII` and the `eth` resource for its existing Ethernet option. It does not select an SFP resource.
 - `litex-boards/litex_boards/platforms/embedfire_rise_pro.py` defines separate RGMII Ethernet pads, two SFP resources, and a GTP reference-clock resource. Resource indices alone do not confirm board connector labels or the actual clock frequency.
 
-## Open prerequisites
+## Remaining physical documentation
 
 - Installed PCB revision and its correspondence with the supplied originals.
 - Physical correspondence of the installed board with the documented onboard 125 MHz clock route.
-- USB Ethernet enumeration, interface name, and negotiated link capabilities. Inspection on 2026-10-12 after Q8 still showed no USB Ethernet device in `lsusb` and no wired interface in `ip -br link` or `/sys/class/net`.
-- Actual flash model/JEDEC ID.
 
-These are unresolved prerequisites, not accepted implementation choices.
+The installed PCB's revision was not read. Functional tests below validate
+the selected clock and port routes on the connected board; the oscillator's
+frequency was not measured with an external instrument.
 
 ## Hardware sources supplied by the user
 
@@ -51,7 +51,7 @@ These are unresolved prerequisites, not accepted implementation choices.
 - Existing target `--flash` calls `prog.flash(0, builder.get_bitstream_filename(mode="flash"))`.
 - `VivadoProgrammer.flash()` enables erase, programming, and verification over the image's address range. Its `address` argument is not applied in the generated script; offset zero in the generated image matches this target's existing usage.
 - Core schematic page 7 documents Master SPI x4 boot mode (`M[2:0]=001`).
-- Core schematic page 14 identifies U13 as `N25Q128A13ESE40G`, while the Pro hardware specification page 14 says `W25Q128`. Both specify 16 MiB; the actual flash ID must determine programmer selection. No flash operation has been performed.
+- Core schematic page 14 identifies U13 as `N25Q128A13ESE40G`, while the Pro hardware specification page 14 says `W25Q128`. Both specify 16 MiB. Actual JEDEC ID `20ba18` established the Micron descriptor used for programming.
 - Implementation inspection found SPI CS on T19 in core schematic page 8. The platform and Pro spreadsheet's T10 assignment fails Vivado pin placement. The dedicated test target uses T19 and leaves the original clones unchanged.
 
 ## Accepted test details
@@ -75,4 +75,20 @@ Accepted through the user's recommendations preference and Q9:
 5. Identify the actual flash part, select compatible configuration-memory settings, program and verify the boot image through JTAG, and verify SPI boot.
 6. Identify the USB Ethernet adapter once it enumerates, bring up the isolated test link, and run all 1,000 frames. Save host results and board counters. Report any physical step that cannot be verified as incomplete.
 
-The hardware facts above can be checked during implementation without reopening settled design choices. The absence of a visible USB Ethernet adapter currently prevents cable-loopback validation, but does not prevent building the responder and host tool.
+The physical checks were completed during implementation without reopening the settled design choices. The adapter became available after reconnecting, enabling cable-loopback validation.
+
+## Completed validation (2026-10-12)
+
+The USB adapter reappeared after reconnecting as Realtek RTL8153,
+`enx98fc84e0c4e8`, MAC `98:fc:84:e0:c4:e8`. Its link negotiated 1 Gbps.
+The absence-of-adapter note above describes the earlier inspection only.
+
+- 39 tests passed, including real LiteEth MAC/FCS simulations at minimum and maximum frame sizes, receive-error rejection/recovery, and host false-pass protection.
+- Mypy passed on seven first-party Python files; vendor imports lack stubs and were skipped.
+- Vivado 2025.2 built the image with setup slack 1.358 ns and hold slack 0.079 ns, zero unclocked registers, and zero unconstrained internal endpoints. External UART, flash and GPIO I/O are asynchronous or slow interfaces without source-synchronous timing constraints.
+- SRAM-loaded test: 1,000/1,000 replies, with all host anomaly counters zero.
+- SPI erase/program/verify succeeded for Micron `20ba18` at offset zero. Vivado's boot command returned an empty string despite DONE high; its wrapper initially reported failure. The wrapper was corrected to check refreshed DONE and CRC registers. SPI boot was separately verified without another erase.
+- Flash-loaded test: 1,000/1,000 replies, with all host anomaly counters zero. Board accepted/transmitted counters each increased by 1,000; receive errors, CRC errors, preamble errors, overflow and MAC drops did not increase. Twenty-four unrelated frames were rejected between counter snapshots.
+- The board remains configured with the SPI-booted loopback image. A physical cold power cycle was not performed.
+
+Evidence and image hashes are saved in [results](results/2026-10-12/summary.json).

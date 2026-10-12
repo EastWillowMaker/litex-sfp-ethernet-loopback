@@ -1,0 +1,23 @@
+{
+  "operation": "load",
+  "image": "/home/eastwillow/Documents/litex-network-router/build/sfp2/gateware/sfp2_loopback.bit",
+  "target": "localhost:3121/xilinx_tcf/Digilent/210357A7D00EA",
+  "image_sha256": "4f17505d95a9519d349cfdf603984058e302d814820e3fe3a4f8d7d420c10369",
+  "vivado_returncode": 0,
+  "passed": true,
+  "status_after_boot": {
+    "link": 0,
+    "lock": 1,
+    "tx_ready": 1,
+    "rx_ready": 1,
+    "loss_of_signal": 1,
+    "rx_frames": 0,
+    "tx_frames": 0,
+    "rejected_frames": 181,
+    "error_frames": 183,
+    "overflow_frames": 0,
+    "mac_rx_datapath_crc_errors": 313,
+    "mac_rx_datapath_preamble_errors": 253854,
+    "mac_rx_datapath_drops": 0
+  }
+}

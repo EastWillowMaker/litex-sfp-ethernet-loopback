@@ -62,7 +62,11 @@ Read-only descriptor creation and property setting were checked in Vivado
 were accepted (these properties do not appear in the default property report).
 `program_hw_cfgmem` accepts the cfgmem object positionally. After successful
 erase/program/verify, `boot_hw_device -timeout 30 $device` triggers startup
-using the physical mode pins and returns 1 for DONE high. It can validate
+using the physical mode pins. Although its help claims a boolean return, the
+installed Vivado 2025.2 returned an empty string on successful boot with DONE
+high. Validate refreshed `REGISTER.CONFIG_STATUS.BIT14_DONE_PIN=1`,
+`REGISTER.CONFIG_STATUS.BIT00_CRC_ERROR=0`, and no boot fallback/errors instead
+of testing its return value. It can validate
 Master SPI boot without a physical power cycle; it changes FPGA configuration
 and is intentionally absent from the inventory script.
 

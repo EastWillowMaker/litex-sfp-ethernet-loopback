@@ -1,0 +1,10 @@
+{
+  "operation": "flash",
+  "image": "/home/eastwillow/Documents/litex-network-router/build/sfp2/gateware/sfp2_loopback.bin",
+  "target": "localhost:3121/xilinx_tcf/Digilent/210357A7D00EA",
+  "passed": false,
+  "flash_jedec_id": "20ba18",
+  "flash_part": "mt25ql128-spi-x1_x2_x4",
+  "image_sha256": "344e8a71e8df62b9aed7e17fc65210eda6e58906602835da85f02d3a1c3ed3b9",
+  "vivado_returncode": 1
+}
