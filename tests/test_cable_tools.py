@@ -116,10 +116,16 @@ def run(tmp_path, bus, *, direction="sfp1-to-sfp2", route_frames=True, reply=Tru
 def test_cable_status_reader_reports_direction_ports_and_counter_snapshot():
     bus = CableBus()
     bus.regs.host_ingress_rx_frames.value = 12
+    bus.regs.host_phy_activity_rx_clock_cycles.value = 250
+    bus.regs.host_phy_activity_rx_source_valid_beats.value = 8
 
     status = cable_diagnostics.read_cable_status(bus)
 
     assert status["host_ingress_rx_frames"] == 12
+    assert status["host_phy_activity_rx_clock_cycles"] == 250
+    assert status["host_phy_activity_rx_source_valid_beats"] == 8
+    assert "host_phy_activity_rx_clock_cycles" not in cable_diagnostics.ERROR_COUNTER_NAMES
+    assert "host_phy_activity_rx_source_valid_beats" not in cable_diagnostics.ERROR_COUNTER_NAMES
     assert status["sfp0_link_up"] == 1
     assert status["cable_status_busy"] == 0
 

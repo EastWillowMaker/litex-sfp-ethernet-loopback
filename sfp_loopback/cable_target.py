@@ -102,6 +102,40 @@ class PHYResetStatus(LiteXModule):
         self.comb += self.reset_done.status.eq(~phy.crg.reset)
 
 
+def gray_to_binary(gray):
+    """Decode a synchronized Gray counter without multi-bit CDC tearing."""
+    value = gray
+    for shift in (1, 2, 4, 8, 16):
+        value = value ^ (value >> shift)
+    return value
+
+
+class HostPHYActivity(LiteXModule):
+    """Expose raw RGMII RX activity counters in the system CSR domain."""
+
+    def __init__(self, phy):
+        self.rx_clock_cycles = CSRStatus(
+            32,
+            name="rx_clock_cycles",
+            description="Cycles observed in the RTL8211F recovered RGMII RX clock domain.",
+        )
+        self.rx_source_valid_beats = CSRStatus(
+            32,
+            name="rx_source_valid_beats",
+            description="Raw RGMII PHY source-valid byte beats before MAC parsing.",
+        )
+
+        for name, status in (
+            ("rx_clock_cycles", self.rx_clock_cycles),
+            ("rx_source_valid_beats", self.rx_source_valid_beats),
+        ):
+            synchronized_gray = Signal(32)
+            self.specials += MultiReg(
+                getattr(phy, f"{name}_gray"), synchronized_gray
+            )
+            self.comb += status.status.eq(gray_to_binary(synchronized_gray))
+
+
 class CableClockReset(ClockReset):
     """Add the calibrated 200 MHz IDELAY reference to the existing board CRG."""
 
@@ -258,6 +292,7 @@ class CableSoC(SoCCore):
         # Verify the onboard RGMII PHY's reset released after its bounded
         # 10 ms hardware reset interval. The active-low pad is driven by PHY CRG.
         self.rtl8211f = PHYResetStatus(self.host_phy)
+        self.host_phy_activity = HostPHYActivity(self.host_phy)
 
     def _add_path_counters(self):
         counter_names = (

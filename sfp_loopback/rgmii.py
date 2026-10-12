@@ -1,6 +1,6 @@
 """Board-specific RGMII PHY clocking for the Rise Pro."""
 
-from migen import ClockDomain, Instance, Signal
+from migen import ClockDomain, If, Instance, Signal
 from migen.genlib.resetsync import AsyncResetSynchronizer
 from litex.gen import ClockDomainsRenamer, ClockSignal, LiteXModule
 from litex.soc.interconnect.csr import CSRStorage
@@ -80,6 +80,34 @@ class RegionalRGMIIClockReset(LiteXModule):
         ]
 
 
+class RGMIIActivityCounters(LiteXModule):
+    """Count raw receive-clock and valid-byte activity in the RX domain."""
+
+    def __init__(self, source_valid):
+        self.rx_clock_cycles = Signal(32)
+        self.rx_source_valid_beats = Signal(32)
+        self.rx_clock_cycles_gray = Signal(32)
+        self.rx_source_valid_beats_gray = Signal(32)
+
+        next_cycles = Signal(32)
+        next_valid_beats = Signal(32)
+        self.comb += [
+            next_cycles.eq(self.rx_clock_cycles + 1),
+            next_valid_beats.eq(self.rx_source_valid_beats + 1),
+        ]
+        self.sync.eth_rx += [
+            self.rx_clock_cycles.eq(next_cycles),
+            self.rx_clock_cycles_gray.eq(next_cycles ^ (next_cycles >> 1)),
+            If(
+                source_valid,
+                self.rx_source_valid_beats.eq(next_valid_beats),
+                self.rx_source_valid_beats_gray.eq(
+                    next_valid_beats ^ (next_valid_beats >> 1)
+                ),
+            ),
+        ]
+
+
 class RegionalS7PHYRGMII(LiteXModule):
     """LiteEth-compatible RGMII PHY with a regional RX clock domain."""
 
@@ -111,5 +139,12 @@ class RegionalS7PHYRGMII(LiteXModule):
             LiteEthPHYRGMIIRX(pads, rx_delay, iodelay_clk_freq)
         )
         self.sink, self.source = self.tx.sink, self.rx.source
+
+        # Gray values are registered alongside the binary counts, so the
+        # asynchronous CSR sampling sees only one changed bit per increment.
+        self.submodules.rx_activity = RGMIIActivityCounters(self.source.valid)
+        self.rx_clock_cycles_gray = self.rx_activity.rx_clock_cycles_gray
+        self.rx_source_valid_beats_gray = self.rx_activity.rx_source_valid_beats_gray
+
         if hasattr(pads, "mdc"):
             self.mdio = LiteEthPHYMDIO(pads)

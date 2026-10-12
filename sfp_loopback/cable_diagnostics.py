@@ -26,6 +26,8 @@ def _status_names():
         "cable_control_direction", "cable_control_enable",
         "cable_status_active_direction", "cable_status_busy",
         "rtl8211f_reset_done",
+        "host_phy_activity_rx_clock_cycles",
+        "host_phy_activity_rx_source_valid_beats",
         "host_tx_frames", "sfp0_tx_frames", "sfp1_tx_frames",
     ]
     for port in ("sfp0", "sfp1"):

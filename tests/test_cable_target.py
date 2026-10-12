@@ -2,7 +2,121 @@
 
 import csv
 
-from sfp_loopback.cable_target import build_target
+from migen import ClockDomain, Module, Signal
+from migen.sim import run_simulation
+
+from sfp_loopback.cable_target import build_target, gray_to_binary
+from sfp_loopback.rgmii import RGMIIActivityCounters
+
+
+def test_rgmii_activity_counters_register_glitch_safe_gray_counts():
+    dut = _make_activity_harness()
+    valid_samples = (0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1)
+
+    def sample_counters():
+        expected_valid_beats = 0
+        previous_valid = 0
+        previous_clock_gray = 0
+        previous_valid_gray = 0
+        for expected_cycles, valid in enumerate(valid_samples, start=1):
+            yield dut.source_valid.eq(valid)
+            yield
+
+            cycles = yield dut.activity.rx_clock_cycles
+            clock_gray = yield dut.activity.rx_clock_cycles_gray
+            valid_beats = yield dut.activity.rx_source_valid_beats
+            valid_gray = yield dut.activity.rx_source_valid_beats_gray
+
+            expected_valid_beats += previous_valid
+            assert cycles == expected_cycles
+            assert valid_beats == expected_valid_beats
+            assert gray_to_binary(clock_gray) == cycles
+            assert gray_to_binary(valid_gray) == valid_beats
+            assert (clock_gray ^ previous_clock_gray).bit_count() <= 1
+            assert (valid_gray ^ previous_valid_gray).bit_count() <= 1
+            previous_clock_gray = clock_gray
+            previous_valid_gray = valid_gray
+            previous_valid = valid
+
+        yield dut.source_valid.eq(0)
+        yield
+        expected_valid_beats += previous_valid
+        cycles = yield dut.activity.rx_clock_cycles
+        clock_gray = yield dut.activity.rx_clock_cycles_gray
+        valid_beats = yield dut.activity.rx_source_valid_beats
+        valid_gray = yield dut.activity.rx_source_valid_beats_gray
+        assert cycles == len(valid_samples) + 1
+        assert valid_beats == expected_valid_beats
+        assert gray_to_binary(clock_gray) == cycles
+        assert gray_to_binary(valid_gray) == valid_beats
+        assert (clock_gray ^ previous_clock_gray).bit_count() <= 1
+        assert (valid_gray ^ previous_valid_gray).bit_count() <= 1
+
+    run_simulation(dut, {"eth_rx": sample_counters()}, clocks={"eth_rx": 8})
+
+
+def test_rgmii_activity_gray_counters_wrap_without_multi_bit_transition():
+    initial = 0xFFFF_FFFE
+    dut = _make_activity_harness(initial, initial)
+    valid_samples = (1, 1, 0, 1, 0, 1)
+
+    def sample_counters():
+        expected_valid_beats = initial
+        previous_valid = 0
+        previous_clock_gray = initial ^ (initial >> 1)
+        previous_valid_gray = previous_clock_gray
+        for cycle_index, valid in enumerate(valid_samples, start=1):
+            yield dut.source_valid.eq(valid)
+            yield
+
+            clock_count = yield dut.activity.rx_clock_cycles
+            clock_gray = yield dut.activity.rx_clock_cycles_gray
+            valid_count = yield dut.activity.rx_source_valid_beats
+            valid_gray = yield dut.activity.rx_source_valid_beats_gray
+
+            expected_cycles = (initial + cycle_index) & 0xFFFF_FFFF
+            expected_valid_beats = (expected_valid_beats + previous_valid) & 0xFFFF_FFFF
+            assert clock_count == expected_cycles
+            assert valid_count == expected_valid_beats
+            assert gray_to_binary(clock_gray) == clock_count
+            assert gray_to_binary(valid_gray) == valid_count
+            assert (clock_gray ^ previous_clock_gray).bit_count() <= 1
+            assert (valid_gray ^ previous_valid_gray).bit_count() <= 1
+            previous_clock_gray = clock_gray
+            previous_valid_gray = valid_gray
+            previous_valid = valid
+
+        yield dut.source_valid.eq(0)
+        yield
+        expected_cycles = (initial + len(valid_samples) + 1) & 0xFFFF_FFFF
+        expected_valid_beats = (expected_valid_beats + previous_valid) & 0xFFFF_FFFF
+        clock_count = yield dut.activity.rx_clock_cycles
+        clock_gray = yield dut.activity.rx_clock_cycles_gray
+        valid_count = yield dut.activity.rx_source_valid_beats
+        valid_gray = yield dut.activity.rx_source_valid_beats_gray
+        assert clock_count == expected_cycles
+        assert valid_count == expected_valid_beats
+        assert gray_to_binary(clock_gray) == clock_count
+        assert gray_to_binary(valid_gray) == valid_count
+        assert (clock_gray ^ previous_clock_gray).bit_count() <= 1
+        assert (valid_gray ^ previous_valid_gray).bit_count() <= 1
+
+    run_simulation(dut, {"eth_rx": sample_counters()}, clocks={"eth_rx": 8})
+
+
+def _make_activity_harness(clock_reset=0, valid_reset=0):
+    class ActivityHarness(Module):
+        def __init__(self):
+            self.clock_domains.cd_eth_rx = ClockDomain("eth_rx")
+            self.source_valid = Signal()
+            self.submodules.activity = RGMIIActivityCounters(self.source_valid)
+
+    dut = ActivityHarness()
+    dut.activity.rx_clock_cycles.reset = clock_reset
+    dut.activity.rx_clock_cycles_gray.reset = clock_reset ^ (clock_reset >> 1)
+    dut.activity.rx_source_valid_beats.reset = valid_reset
+    dut.activity.rx_source_valid_beats_gray.reset = valid_reset ^ (valid_reset >> 1)
+    return dut
 
 
 def test_build_emits_three_port_csr_map_and_shared_qpll(tmp_path):
@@ -44,6 +158,8 @@ def test_build_emits_three_port_csr_map_and_shared_qpll(tmp_path):
         "host_phy_mdio_r",
         "host_phy_crg_reset",
         "rtl8211f_reset_done",
+        "host_phy_activity_rx_clock_cycles",
+        "host_phy_activity_rx_source_valid_beats",
         "sfp0_control_tx_disable",
         "sfp1_control_tx_disable",
         "sfp0_link_up",
