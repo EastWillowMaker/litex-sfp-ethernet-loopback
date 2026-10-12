@@ -1,0 +1,10 @@
+{
+  "interface": "enx98fc84e0c4e8",
+  "original_nm_managed": true,
+  "original_nm_state": "disconnected",
+  "temporary_nm_managed": false,
+  "carrier": 1,
+  "speed_mbps": 1000,
+  "restore_nm_managed_after_validation": true,
+  "restored_nm_managed": true
+}

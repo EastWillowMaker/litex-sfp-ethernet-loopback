@@ -1,0 +1,524 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
+| Date         : Tue Oct 13 01:00:19 2026
+| Host         : eastwillow-FA401WU running 64-bit Ubuntu 26.04 LTS
+| Command      : report_timing_summary -datasheet -max_paths 10 -file sfp_cable_loopback_timing.rpt
+| Design       : sfp_cable_loopback
+| Device       : 7a35t-fgg484
+| Speed File   : -2  PRODUCTION 1.23 2018-06-13
+| Design State : Physopt postRoute
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Summary Report
+
+------------------------------------------------------------------------------------------------
+| Timer Settings
+| --------------
+------------------------------------------------------------------------------------------------
+
+  Enable Multi Corner Analysis               :  Yes
+  Enable Pessimism Removal                   :  Yes
+  Pessimism Removal Resolution               :  Nearest Common Node
+  Enable Input Delay Default Clock           :  No
+  Enable Preset / Clear Arcs                 :  No
+  Disable Flight Delays                      :  No
+  Ignore I/O Paths                           :  No
+  Timing Early Launch at Borrowing Latches   :  No
+  Borrow Time for Max Delay Exceptions       :  Yes
+  Merge Timing Exceptions                    :  Yes
+  Inter-SLR Compensation                     :  Conservative
+
+  Corner  Analyze    Analyze
+  Name    Max Paths  Min Paths
+  ------  ---------  ---------
+  Slow    Yes        Yes
+  Fast    Yes        Yes
+
+
+------------------------------------------------------------------------------------------------
+| Report Methodology
+| ------------------
+------------------------------------------------------------------------------------------------
+
+No report available as report_methodology has not been run prior. Run report_methodology on the current design for the summary of methodology violations.
+
+
+
+check_timing report
+
+Table of Contents
+-----------------
+1. checking no_clock (0)
+2. checking constant_clock (0)
+3. checking pulse_width_clock (2)
+4. checking unconstrained_internal_endpoints (0)
+5. checking no_input_delay (6)
+6. checking no_output_delay (11)
+7. checking multiple_clock (0)
+8. checking generated_clocks (0)
+9. checking loops (0)
+10. checking partial_input_delay (0)
+11. checking partial_output_delay (0)
+12. checking latch_loops (0)
+
+1. checking no_clock (0)
+------------------------
+ There are 0 register/latch pins with no clock.
+
+
+2. checking constant_clock (0)
+------------------------------
+ There are 0 register/latch pins with constant_clock.
+
+
+3. checking pulse_width_clock (2)
+---------------------------------
+ There are 2 register/latch pins which need pulse_width check. (LOW)
+
+
+4. checking unconstrained_internal_endpoints (0)
+------------------------------------------------
+ There are 0 pins that are not constrained for maximum delay.
+
+ There are 0 pins that are not constrained for maximum delay due to constant clock.
+
+
+5. checking no_input_delay (6)
+------------------------------
+ There are 6 input ports with no input delay specified. (HIGH)
+
+ There are 0 input ports with no input delay but user has a false path constraint.
+
+
+6. checking no_output_delay (11)
+--------------------------------
+ There are 10 ports with no output delay specified. (HIGH)
+
+ There are 0 ports with no output delay but user has a false path constraint
+
+ There is 1 port with no output delay but with a timing clock defined on it or propagating through it (LOW)
+
+
+7. checking multiple_clock (0)
+------------------------------
+ There are 0 register/latch pins with multiple clocks.
+
+
+8. checking generated_clocks (0)
+--------------------------------
+ There are 0 generated clocks that are not connected to a clock source.
+
+
+9. checking loops (0)
+---------------------
+ There are 0 combinational loops in the design.
+
+
+10. checking partial_input_delay (0)
+------------------------------------
+ There are 0 input ports with partial input delay specified.
+
+
+11. checking partial_output_delay (0)
+-------------------------------------
+ There are 0 ports with partial output delay specified.
+
+
+12. checking latch_loops (0)
+----------------------------
+ There are 0 combinational latch loops in the design through latch input
+
+
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------
+      0.215        0.000                      0                17573        0.037        0.000                      0                17573        0.264        0.000                       0                  5571
+
+
+All user specified timing constraints are met.
+
+
+------------------------------------------------------------------------------------------------
+| Clock Summary
+| -------------
+------------------------------------------------------------------------------------------------
+
+Clock                                       Waveform(ns)         Period(ns)      Frequency(MHz)
+-----                                       ------------         ----------      --------------
+clk50                                       {0.000 10.000}       20.000          50.000
+  cableclockreset_clkout                    {0.000 10.000}       20.000          50.000
+  host_phy_clkout0                          {0.000 4.000}        8.000           125.000
+  host_phy_clkout1                          {2.000 6.000}        8.000           125.000
+    rtl8211f_rgmii_tx                       {2.000 6.000}        8.000           125.000
+  pll_fb                                    {0.000 10.000}       20.000          50.000
+  s7pll_clkout                              {0.000 2.500}        5.000           200.000
+eth_clocks_rx                               {0.000 4.000}        8.000           125.000
+onboard_gtp_refclk_p                        {0.000 4.000}        8.000           125.000
+sfp0_rxoutclk                               {0.000 8.000}        16.000          62.500
+  s7pll0_pll_fb                             {0.000 8.000}        16.000          62.500
+  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0   {0.000 8.000}        16.000          62.500
+  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1   {0.000 4.000}        8.000           125.000
+sfp0_txoutclk                               {0.000 8.000}        16.000          62.500
+  s7mmcm0_mmcm_fb                           {0.000 8.000}        16.000          62.500
+  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0  {0.000 8.000}        16.000          62.500
+  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1  {0.000 4.000}        8.000           125.000
+sfp1_rxoutclk                               {0.000 8.000}        16.000          62.500
+  s7pll1_pll_fb                             {0.000 8.000}        16.000          62.500
+  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0   {0.000 8.000}        16.000          62.500
+  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1   {0.000 4.000}        8.000           125.000
+sfp1_txoutclk                               {0.000 8.000}        16.000          62.500
+  s7mmcm1_mmcm_fb                           {0.000 8.000}        16.000          62.500
+  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0  {0.000 8.000}        16.000          62.500
+  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1  {0.000 4.000}        8.000           125.000
+
+
+------------------------------------------------------------------------------------------------
+| Intra Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+Clock                                           WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints
+-----                                           -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------
+clk50                                            18.873        0.000                      0                    7        0.232        0.000                      0                    7        7.000        0.000                       0                     9
+  cableclockreset_clkout                          1.342        0.000                      0                14154        0.044        0.000                      0                14154        8.870        0.000                       0                  3963
+  host_phy_clkout0                                1.363        0.000                      0                  238        0.118        0.000                      0                  238        3.500        0.000                       0                   104
+  host_phy_clkout1                                                                                                                                                                            6.408        0.000                       0                     3
+  pll_fb                                                                                                                                                                                     18.751        0.000                       0                     2
+  s7pll_clkout                                    3.256        0.000                      0                    9        0.207        0.000                      0                    9        0.264        0.000                       0                     8
+eth_clocks_rx                                     0.290        0.000                      0                  610        0.118        0.000                      0                  610        3.500        0.000                       0                   250
+onboard_gtp_refclk_p                                                                                                                                                                          6.462        0.000                       0                     2
+sfp0_rxoutclk                                    14.581        0.000                      0                    7        0.185        0.000                      0                    7        5.000        0.000                       0                    11
+  s7pll0_pll_fb                                                                                                                                                                              14.751        0.000                       0                     2
+  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0                                                                                                                                                     7.500        0.000                       0                     5
+  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1         1.376        0.000                      0                  549        0.121        0.000                      0                  549        3.500        0.000                       0                   234
+sfp0_txoutclk                                    14.896        0.000                      0                    7        0.253        0.000                      0                    7        5.000        0.000                       0                    11
+  s7mmcm0_mmcm_fb                                                                                                                                                                            14.751        0.000                       0                     2
+  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0       13.384        0.000                      0                   20        0.130        0.000                      0                   20        7.500        0.000                       0                    24
+  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1        1.373        0.000                      0                  671        0.037        0.000                      0                  671        3.500        0.000                       0                   326
+sfp1_rxoutclk                                    14.977        0.000                      0                    7        0.179        0.000                      0                    7        5.000        0.000                       0                    11
+  s7pll1_pll_fb                                                                                                                                                                              14.751        0.000                       0                     2
+  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0                                                                                                                                                     7.500        0.000                       0                     5
+  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1         1.376        0.000                      0                  549        0.068        0.000                      0                  549        3.500        0.000                       0                   234
+sfp1_txoutclk                                    14.857        0.000                      0                    7        0.174        0.000                      0                    7        5.000        0.000                       0                    11
+  s7mmcm1_mmcm_fb                                                                                                                                                                            14.751        0.000                       0                     2
+  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0       13.946        0.000                      0                   20        0.133        0.000                      0                   20        7.500        0.000                       0                    24
+  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1        1.373        0.000                      0                  671        0.071        0.000                      0                  671        3.500        0.000                       0                   326
+
+
+------------------------------------------------------------------------------------------------
+| Inter Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+From Clock                                To Clock                                      WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints
+----------                                --------                                      -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------
+host_phy_clkout0                          rtl8211f_rgmii_tx                               0.215        0.000                      0                    5        0.262        0.000                      0                    5
+sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1   sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0         5.840        0.000                      0                    1        0.273        0.000                      0                    1
+sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0   sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1         5.283        0.000                      0                   10        0.161        0.000                      0                   10
+sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0        5.515        0.000                      0                   20        0.120        0.000                      0                   20
+sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1   sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0         6.029        0.000                      0                    1        0.178        0.000                      0                    1
+sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0   sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1         5.441        0.000                      0                   10        0.127        0.000                      0                   10
+sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0        5.632        0.000                      0                   20        0.104        0.000                      0                   20
+
+
+------------------------------------------------------------------------------------------------
+| Other Path Groups Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group    From Clock    To Clock          WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints
+----------    ----------    --------          -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------
+
+
+------------------------------------------------------------------------------------------------
+| Timing Details
+| --------------
+------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+
+Clock group slack excerpts from the same routed report:
+
+From Clock:  clk50
+  To Clock:  clk50
+
+Setup :            0  Failing Endpoints,  Worst Slack       18.873ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.232ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        7.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  cableclockreset_clkout
+  To Clock:  cableclockreset_clkout
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.342ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.044ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        8.870ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  host_phy_clkout0
+  To Clock:  host_phy_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.363ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.118ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  host_phy_clkout1
+  To Clock:  host_phy_clkout1
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        6.408ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  pll_fb
+  To Clock:  pll_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack       18.751ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  s7pll_clkout
+  To Clock:  s7pll_clkout
+
+Setup :            0  Failing Endpoints,  Worst Slack        3.256ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.207ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        0.264ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  eth_clocks_rx
+  To Clock:  eth_clocks_rx
+
+Setup :            0  Failing Endpoints,  Worst Slack        0.290ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.118ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  onboard_gtp_refclk_p
+  To Clock:  onboard_gtp_refclk_p
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        6.462ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_rxoutclk
+  To Clock:  sfp0_rxoutclk
+
+Setup :            0  Failing Endpoints,  Worst Slack       14.581ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.185ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        5.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  s7pll0_pll_fb
+  To Clock:  s7pll0_pll_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack       14.751ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        7.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.376ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.121ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_txoutclk
+  To Clock:  sfp0_txoutclk
+
+Setup :            0  Failing Endpoints,  Worst Slack       14.896ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.253ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        5.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  s7mmcm0_mmcm_fb
+  To Clock:  s7mmcm0_mmcm_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack       14.751ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack       13.384ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.130ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        7.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.373ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.037ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_rxoutclk
+  To Clock:  sfp1_rxoutclk
+
+Setup :            0  Failing Endpoints,  Worst Slack       14.977ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.179ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        5.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  s7pll1_pll_fb
+  To Clock:  s7pll1_pll_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack       14.751ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        7.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.376ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.068ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_txoutclk
+  To Clock:  sfp1_txoutclk
+
+Setup :            0  Failing Endpoints,  Worst Slack       14.857ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.174ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        5.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  s7mmcm1_mmcm_fb
+  To Clock:  s7mmcm1_mmcm_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack       14.751ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack       13.946ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.133ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        7.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.373ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.071ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.500ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+From Clock:  host_phy_clkout0
+  To Clock:  rtl8211f_rgmii_tx
+
+Setup :            0  Failing Endpoints,  Worst Slack        0.215ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.262ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.840ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.273ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout0
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7pll_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.283ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.161ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+  To Clock:  sfp0_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.515ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.120ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack        6.029ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.178ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout0
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7pll_clkout1
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.441ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.127ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+
+From Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout1
+  To Clock:  sfp1_phy_pma_a7_gtp_basex_s7mmcm_clkout0
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.632ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.104ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------

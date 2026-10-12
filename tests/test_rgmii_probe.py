@@ -39,4 +39,3 @@ def test_probe_exposes_clock_activity_and_phy_diagnostics_without_tx_clock(tmp_p
 
     assert "ODDR" not in verilog
     assert "eth_tx" not in verilog
-

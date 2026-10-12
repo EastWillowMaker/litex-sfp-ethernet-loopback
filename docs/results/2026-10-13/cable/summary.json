@@ -1,0 +1,61 @@
+{
+  "source_commit": "aba73cde66d6dd776a0457997d3fdb4a5f9f2ca5",
+  "image_sha256": {
+    "sfp_cable_loopback.bin": "faaeb896b7847280a151e8f2fd3b3c7e32253f75d7d0df2faae72c3165e9ad27",
+    "sfp_cable_loopback.bit": "531d040579b812d2c04d74b0801ebdf74b465721db541e118798dfc90e0d2cfa"
+  },
+  "tests": {
+    "passed": 95,
+    "seconds": 127.75
+  },
+  "mypy": "passed",
+  "timing_ns": {
+    "setup": 0.215,
+    "hold": 0.037,
+    "pulse_width": 0.264
+  },
+  "unclocked_paths": 0,
+  "unconstrained_internal_endpoints": 0,
+  "review": {
+    "standards_violations": 0,
+    "spec_findings_remaining": 0,
+    "optional_smell": "Repeated HDL protocol signature checks"
+  },
+  "sram_loaded": true,
+  "phy_configuration_verified": true,
+  "host_interface": "enx98fc84e0c4e8",
+  "qualification_status": "All four SRAM runs passed; physical disconnected-cable and SPI-boot qualification pending",
+  "timing_limitations": "Nominal 8 ns 50% waveform and matched traces; full PHY period/duty variation and measured PCB skew are not covered. No fabric clock routing exception.",
+  "gateware_source_commit": "e7b2336",
+  "loaded_host_client_commit": "27c099a",
+  "host_client_provenance": "The loaded worker predates address discovery/caching. Raw frame verifier and pass criteria are unchanged; current PHY discovery was validated live at address 1.",
+  "timing_full_report_sha256": "77cdd6f87bd99596a030828a364fb16ea37248bb32d4ebabd8e758bab5b83b34",
+  "clock_pin_mapping": {
+    "rx": "C18",
+    "tx": "C19",
+    "rx_evidence": "Passive input-only probe, activity stopped during PHY reset and resumed afterward"
+  },
+  "phy_address": 1,
+  "sram_runs": [
+    {
+      "file": "sram/sfp1-to-sfp2-fixed.json",
+      "passed": true,
+      "frames": 1000
+    },
+    {
+      "file": "sram/sfp1-to-sfp2-sustained.json",
+      "passed": true,
+      "frames": 281731
+    },
+    {
+      "file": "sram/sfp2-to-sfp1-fixed.json",
+      "passed": true,
+      "frames": 1000
+    },
+    {
+      "file": "sram/sfp2-to-sfp1-sustained.json",
+      "passed": true,
+      "frames": 283933
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "host_interface": "enx98fc84e0c4e8",
+  "carrier_before": 1,
+  "carrier_while_rtl8211f_reset_held": 0,
+  "carrier_after_reset_released": 1,
+  "hold_seconds": 1,
+  "recovery_wait_seconds": 3,
+  "date_local": "2026-10-13"
+}

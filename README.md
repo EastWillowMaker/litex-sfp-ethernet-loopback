@@ -153,6 +153,14 @@ emitting an image. Its RGMII input timing assumes an 8 ns, 50% clock waveform
 and matched board traces; full datasheet period/duty extremes are outside
 this experimental test target's STA model.
 
+Use a dedicated host interface without automatic network configuration
+traffic. For a NetworkManager-managed test NIC, temporarily pause its
+management while retaining the physical link:
+
+```bash
+nmcli device set enx98fc84e0c4e8 managed no
+```
+
 Run 1,000 frames in each direction, with 200 frames at each baseline size:
 
 ```bash
@@ -193,3 +201,14 @@ Repeat both fixed-count and timed runs after SPI boot. This replaces the
 existing flash boot image using the previously authorized programming
 workflow. Simulation, FPGA timing, programming and real cable evidence are
 reported separately.
+
+Restore the test NIC to its previous NetworkManager setting after validation:
+
+```bash
+# Use yes only if the interface was managed before the test.
+nmcli device set enx98fc84e0c4e8 managed yes
+```
+
+The [2026-10-13 SRAM evidence](docs/results/2026-10-13/cable/summary.json)
+records both-direction fixed and sustained passes. Physical cable-disconnect
+and SPI-boot qualification are pending.

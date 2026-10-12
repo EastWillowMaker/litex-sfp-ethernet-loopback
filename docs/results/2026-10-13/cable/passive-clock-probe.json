@@ -1,0 +1,71 @@
+{
+  "clock_candidates_input_only": true,
+  "normal": {
+    "before": {
+      "c18": 487760059,
+      "c19": 1,
+      "e19": 1
+    },
+    "after": {
+      "c18": 509943026,
+      "c19": 1,
+      "e19": 1
+    },
+    "delta": {
+      "c18": 22182967,
+      "c19": 0,
+      "e19": 0
+    }
+  },
+  "phy_held_reset": {
+    "before": {
+      "c18": 510186222,
+      "c19": 1,
+      "e19": 1
+    },
+    "after": {
+      "c18": 510186222,
+      "c19": 1,
+      "e19": 1
+    },
+    "delta": {
+      "c18": 0,
+      "c19": 0,
+      "e19": 0
+    }
+  },
+  "phy_released_reset": {
+    "before": {
+      "c18": 510317474,
+      "c19": 1,
+      "e19": 1
+    },
+    "after": {
+      "c18": 512842768,
+      "c19": 1,
+      "e19": 1
+    },
+    "delta": {
+      "c18": 2525294,
+      "c19": 0,
+      "e19": 0
+    }
+  },
+  "rtl8211f": {
+    "phy_address": 1,
+    "phy_id": "001cc916",
+    "phy_id1": "001c",
+    "phy_id2": "c916",
+    "bmcr": "1040",
+    "bmsr_latched": "79a9",
+    "bmsr": "79ad",
+    "link_up": true,
+    "page_before": "0a42",
+    "rgmii_page": "0d08",
+    "tx_delay_register": "0109",
+    "rx_delay_register": "0019",
+    "phy_tx_delay_enabled": true,
+    "phy_rx_delay_enabled": true,
+    "delay_configuration_passed": false
+  }
+}
