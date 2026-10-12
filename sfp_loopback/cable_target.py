@@ -276,6 +276,12 @@ class CableSoC(SoCCore):
         self.sfp1_return = FrameCounterBank({
             name: getattr(self.cable, f"sfp1_return_{name}") for name in counter_names
         })
+        self.sfp0_unexpected_test = FrameCounterBank({
+            "frames": self.cable.sfp0_unexpected_test_frames
+        })
+        self.sfp1_unexpected_test = FrameCounterBank({
+            "frames": self.cable.sfp1_unexpected_test_frames
+        })
         self.host_tx = FrameCounterBank({"frames": self.cable.host_tx_frames})
         self.sfp0_tx = FrameCounterBank({"frames": self.cable.sfp0_tx_frames})
         self.sfp1_tx = FrameCounterBank({"frames": self.cable.sfp1_tx_frames})

@@ -161,6 +161,12 @@ def test_selected_cable_path_preserves_frame_and_swaps_macs_on_return(direction,
         counts[f"sfp{sender}_return_rejected_frames"] = (
             yield getattr(dut, f"sfp{sender}_return_rejected_frames")
         )
+        counts[f"sfp{sender}_unexpected_test_frames"] = (
+            yield getattr(dut, f"sfp{sender}_unexpected_test_frames")
+        )
+        counts[f"sfp{receiver}_unexpected_test_frames"] = (
+            yield getattr(dut, f"sfp{receiver}_unexpected_test_frames")
+        )
 
     run_simulation(dut, [host(), cable_and_monitor()])
 
@@ -179,6 +185,8 @@ def test_selected_cable_path_preserves_frame_and_swaps_macs_on_return(direction,
         f"sfp{receiver}_return_tx_frames": 1,
         f"sfp{receiver}_return_rejected_frames": 0,
         f"sfp{sender}_return_rejected_frames": 1,
+        f"sfp{sender}_unexpected_test_frames": 1,
+        f"sfp{receiver}_unexpected_test_frames": 0,
     }
 
 
@@ -371,3 +379,164 @@ def test_mac_error_on_selected_cable_return_is_rejected():
         "host_tx": 0,
         "busy": 0,
     }
+
+
+def test_single_beat_malformed_host_frame_does_not_stall_next_transaction():
+    dut = CableLoop(transaction_timeout_cycles=200)
+    transmitted = []
+    returned = []
+    counts = {}
+
+    def host():
+        yield dut.enable.eq(0)
+        yield dut.direction.eq(0)
+        yield
+        yield dut.enable.eq(1)
+        # A one-byte Ethernet frame has frame_start and frame_done together.
+        yield dut.host_sink.valid.eq(1)
+        yield dut.host_sink.data.eq(0x02)
+        yield dut.host_sink.be.eq(1)
+        yield dut.host_sink.first.eq(1)
+        yield dut.host_sink.last.eq(1)
+        yield dut.host_sink.error.eq(0)
+        yield
+        for index, byte in enumerate(TEST_FRAME):
+            yield dut.host_sink.valid.eq(1)
+            yield dut.host_sink.data.eq(byte)
+            yield dut.host_sink.be.eq(1)
+            yield dut.host_sink.first.eq(index == 0)
+            yield dut.host_sink.last.eq(index == len(TEST_FRAME) - 1)
+            yield dut.host_sink.error.eq(0)
+            yield
+        yield dut.host_sink.valid.eq(0)
+        for _ in range(300):
+            yield
+        counts["busy"] = (yield dut.busy)
+        counts["host_tx"] = (yield dut.host_tx_frames)
+        counts["host_rejected"] = (yield dut.host_ingress_rejected_frames)
+
+    def cable():
+        yield dut.host_source.ready.eq(1)
+        yield dut.sfp0_source.ready.eq(1)
+        yield dut.sfp1_source.ready.eq(1)
+        yield dut.sfp0_sink.valid.eq(0)
+        yield dut.sfp1_sink.valid.eq(0)
+        packet = bytearray()
+        return_index = 0
+        returning = False
+        for _ in range(600):
+            if (yield dut.sfp0_source.valid) and (yield dut.sfp0_source.ready):
+                packet.append((yield dut.sfp0_source.data))
+                if (yield dut.sfp0_source.last):
+                    transmitted.append(bytes(packet))
+                    packet.clear()
+                    returning = True
+            if (yield dut.host_source.valid) and (yield dut.host_source.ready):
+                returned.append((yield dut.host_source.data))
+            if returning and return_index < len(TEST_FRAME):
+                yield dut.sfp1_sink.valid.eq(1)
+                yield dut.sfp1_sink.data.eq(TEST_FRAME[return_index])
+                yield dut.sfp1_sink.be.eq(1)
+                yield dut.sfp1_sink.first.eq(return_index == 0)
+                yield dut.sfp1_sink.last.eq(return_index == len(TEST_FRAME) - 1)
+                yield dut.sfp1_sink.error.eq(0)
+                return_index += 1
+            else:
+                yield dut.sfp1_sink.valid.eq(0)
+            yield
+
+    run_simulation(dut, [host(), cable()])
+
+    assert transmitted == [TEST_FRAME]
+    assert bytes(returned) == EXPECTED_REPLY
+    assert counts == {"busy": 0, "host_tx": 1, "host_rejected": 1}
+
+
+def test_delayed_duplicate_is_counted_but_unrelated_cable_frame_is_not():
+    dut = CableLoop(transaction_timeout_cycles=300)
+    returned = []
+    counts = {}
+    unrelated = bytearray(TEST_FRAME)
+    unrelated[12] ^= 1
+
+    def host():
+        yield dut.enable.eq(0)
+        yield dut.direction.eq(0)
+        yield
+        yield dut.enable.eq(1)
+        for index, byte in enumerate(TEST_FRAME):
+            yield dut.host_sink.valid.eq(1)
+            yield dut.host_sink.data.eq(byte)
+            yield dut.host_sink.be.eq(1)
+            yield dut.host_sink.first.eq(index == 0)
+            yield dut.host_sink.last.eq(index == len(TEST_FRAME) - 1)
+            yield dut.host_sink.error.eq(0)
+            yield
+        yield dut.host_sink.valid.eq(0)
+        for _ in range(600):
+            yield
+        counts["unexpected0"] = (yield dut.sfp0_unexpected_test_frames)
+        counts["unexpected1"] = (yield dut.sfp1_unexpected_test_frames)
+        counts["busy"] = (yield dut.busy)
+
+    def cable():
+        yield dut.host_source.ready.eq(1)
+        yield dut.sfp0_source.ready.eq(1)
+        yield dut.sfp1_source.ready.eq(1)
+        yield dut.sfp0_sink.valid.eq(0)
+        yield dut.sfp1_sink.valid.eq(0)
+        index = 0
+        phase = "wait_egress"
+        reply = bytearray()
+        for _ in range(900):
+            if (yield dut.host_source.valid) and (yield dut.host_source.ready):
+                reply.append((yield dut.host_source.data))
+                if (yield dut.host_source.last):
+                    returned.append(bytes(reply))
+                    reply.clear()
+                    phase = "wait_idle"
+            if phase == "wait_egress" and (yield dut.sfp0_source.valid) and (yield dut.sfp0_source.ready):
+                if (yield dut.sfp0_source.last):
+                    phase = "first_return"
+                    index = 0
+            if phase in ("first_return", "duplicate"):
+                if index < len(TEST_FRAME):
+                    yield dut.sfp1_sink.valid.eq(1)
+                    yield dut.sfp1_sink.data.eq(TEST_FRAME[index])
+                    yield dut.sfp1_sink.be.eq(1)
+                    yield dut.sfp1_sink.first.eq(index == 0)
+                    yield dut.sfp1_sink.last.eq(index == len(TEST_FRAME) - 1)
+                    yield dut.sfp1_sink.error.eq(0)
+                    index += 1
+                else:
+                    yield dut.sfp1_sink.valid.eq(0)
+                    index = 0
+                    if phase == "first_return":
+                        phase = "wait_idle"
+                    else:
+                        phase = "unrelated"
+            elif phase == "wait_idle":
+                yield dut.sfp1_sink.valid.eq(0)
+                if not (yield dut.busy) and returned:
+                    phase = "duplicate"
+                    index = 0
+            elif phase == "unrelated":
+                if index < len(unrelated):
+                    yield dut.sfp1_sink.valid.eq(1)
+                    yield dut.sfp1_sink.data.eq(unrelated[index])
+                    yield dut.sfp1_sink.be.eq(1)
+                    yield dut.sfp1_sink.first.eq(index == 0)
+                    yield dut.sfp1_sink.last.eq(index == len(unrelated) - 1)
+                    yield dut.sfp1_sink.error.eq(0)
+                    index += 1
+                else:
+                    yield dut.sfp1_sink.valid.eq(0)
+                    phase = "done"
+            else:
+                yield dut.sfp1_sink.valid.eq(0)
+            yield
+
+    run_simulation(dut, [host(), cable()])
+
+    assert returned == [EXPECTED_REPLY]
+    assert counts == {"unexpected0": 0, "unexpected1": 1, "busy": 0}

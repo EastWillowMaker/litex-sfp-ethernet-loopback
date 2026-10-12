@@ -1,9 +1,11 @@
 """Read cable-target status and inspect the RTL8211F over bounded MDIO."""
 
 import argparse
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import time
+from typing import Iterator
 
 from sfp_loopback.diagnostics import BoundedUART
 
@@ -32,6 +34,7 @@ def _status_names():
             f"{port}_rx_ready", f"{port}_loss_of_signal",
             f"{port}_control_tx_disable",
         ))
+        names.append(f"{port}_unexpected_test_frames")
     for path in ("host_ingress", "sfp0_return", "sfp1_return"):
         for counter in ("rx", "tx", "rejected", "error", "overflow"):
             names.append(f"{path}_{counter}_frames")
@@ -45,7 +48,7 @@ CABLE_STATUS_CSR_NAMES = _status_names()
 ERROR_COUNTER_NAMES = tuple(
     name for name in CABLE_STATUS_CSR_NAMES
     if name.endswith(("_error_frames", "_overflow_frames", "_preamble_errors",
-                      "_crc_errors", "_drops"))
+                      "_crc_errors", "_drops", "_unexpected_test_frames"))
 )
 REJECTION_COUNTER_NAMES = tuple(
     name for name in CABLE_STATUS_CSR_NAMES if name.endswith("_rejected_frames")
@@ -134,17 +137,28 @@ def _rtl8211f_identity(mdio):
     return id1, id2, phy_id
 
 
-def _read_delay_registers(mdio):
+@contextmanager
+def _selected_phy_page(mdio, selected_page: int) -> Iterator[int]:
     prior_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
     try:
-        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, RTL8211F_RGMII_PAGE)
-        tx = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
-        rx = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
+        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, selected_page)
+        actual_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
+        if actual_page != selected_page:
+            raise RuntimeError(
+                f"PHY page select failed: {actual_page:04x} != {selected_page:04x}"
+            )
+        yield prior_page
     finally:
         mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, prior_page)
-    restored_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
-    if restored_page != prior_page:
-        raise RuntimeError(f"PHY page restore failed: {restored_page:04x} != {prior_page:04x}")
+        restored_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
+        if restored_page != prior_page:
+            raise RuntimeError(f"PHY page restore failed: {restored_page:04x} != {prior_page:04x}")
+
+
+def _read_delay_registers(mdio):
+    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE) as prior_page:
+        tx = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
+        rx = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
     return prior_page, tx, rx
 
 
@@ -178,9 +192,7 @@ def read_rtl8211f_status(mdio):
 def configure_rtl8211f_delays(mdio):
     """Clear PHY-internal TX delay, enable RX delay, and restore the page."""
     _rtl8211f_identity(mdio)
-    prior_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
-    try:
-        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, RTL8211F_RGMII_PAGE)
+    with _selected_phy_page(mdio, RTL8211F_RGMII_PAGE) as prior_page:
         tx_before = mdio.read(PHY_ADDRESS, RTL8211F_TX_DELAY_REGISTER)
         rx_before = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
         tx_after = tx_before & ~RTL8211F_TX_DELAY_BIT
@@ -191,13 +203,8 @@ def configure_rtl8211f_delays(mdio):
         rx_verified = mdio.read(PHY_ADDRESS, RTL8211F_RX_DELAY_REGISTER)
         if tx_verified != tx_after or rx_verified != rx_after:
             raise RuntimeError("RTL8211F RGMII delay register readback did not match")
-    finally:
-        mdio.write(PHY_ADDRESS, RTL8211F_PAGE_REGISTER, prior_page)
-    restored_page = mdio.read(PHY_ADDRESS, RTL8211F_PAGE_REGISTER)
-    if restored_page != prior_page:
-        raise RuntimeError(f"PHY page restore failed: {restored_page:04x} != {prior_page:04x}")
     return {
-        "page_restored": f"{restored_page:04x}",
+        "page_restored": f"{prior_page:04x}",
         "tx_register_before": f"{tx_before:04x}",
         "tx_register_after": f"{tx_verified:04x}",
         "rx_register_before": f"{rx_before:04x}",

@@ -1,10 +1,67 @@
 """Buffered test-frame routing for a physical SFP cable loop."""
 
-from migen import If, Module, Mux, Signal
+from migen import Case, If, Module, Mux, Signal
 from litex.soc.interconnect import stream
 from liteeth.common import eth_phy_description
 
 from sfp_loopback.responder import FrameResponder
+
+
+class _UnexpectedTestFrameMonitor(Module):
+    """Count valid LXLP frames arriving outside an accepted return window."""
+
+    def __init__(self):
+        self.valid = Signal()
+        self.data = Signal(8)
+        self.last = Signal()
+        self.error = Signal()
+        self.expected = Signal()
+        self.unexpected_test_frames = Signal(32)
+
+        position = Signal(max=1515)
+        mismatch = Signal()
+        receive_error = Signal()
+        expected = Signal()
+        byte_mismatch = Signal()
+        self.comb += [
+            byte_mismatch.eq(0),
+            Case(position, {
+                0: byte_mismatch.eq(self.data != 0x02),
+                1: byte_mismatch.eq(self.data != 0x00),
+                2: byte_mismatch.eq(self.data != 0x00),
+                3: byte_mismatch.eq(self.data != 0x00),
+                4: byte_mismatch.eq(self.data != 0x00),
+                5: byte_mismatch.eq(self.data != 0x02),
+                12: byte_mismatch.eq(self.data != 0x88),
+                13: byte_mismatch.eq(self.data != 0xb5),
+                14: byte_mismatch.eq(self.data != ord("L")),
+                15: byte_mismatch.eq(self.data != ord("X")),
+                16: byte_mismatch.eq(self.data != ord("L")),
+                17: byte_mismatch.eq(self.data != ord("P")),
+            }),
+        ]
+        self.sync += If(
+            self.valid,
+            If(
+                self.last,
+                If(
+                    (position >= 59) & (position < 1514) &
+                    ~mismatch & ~receive_error & ~self.error & ~expected,
+                    self.unexpected_test_frames.eq(self.unexpected_test_frames + 1),
+                ),
+                position.eq(0),
+                mismatch.eq(0),
+                receive_error.eq(0),
+                expected.eq(0),
+            ).Else(
+                If(position == 0,
+                    mismatch.eq(byte_mismatch),
+                    expected.eq(self.expected),
+                ).Else(mismatch.eq(mismatch | byte_mismatch)),
+                receive_error.eq(receive_error | self.error),
+                If(position < 1514, position.eq(position + 1)),
+            ),
+        )
 
 
 class CableLoop(Module):
@@ -78,6 +135,11 @@ class CableLoop(Module):
         self.sfp1_return_error_frames = sfp1_return.error_frames
         self.sfp1_return_overflow_frames = sfp1_return.overflow_frames
 
+        self.sfp0_unexpected_test_frames = Signal(32)
+        self.sfp1_unexpected_test_frames = Signal(32)
+        self.submodules.sfp0_test_monitor = sfp0_test_monitor = _UnexpectedTestFrameMonitor()
+        self.submodules.sfp1_test_monitor = sfp1_test_monitor = _UnexpectedTestFrameMonitor()
+
         self.host_tx_frames = Signal(32)
         self.sfp0_tx_frames = Signal(32)
         self.sfp1_tx_frames = Signal(32)
@@ -99,6 +161,22 @@ class CableLoop(Module):
             sfp1_return.enable.eq(
                 (transaction_state == self.CABLE_RETURN) & ~self.active_direction
             ),
+            sfp0_test_monitor.valid.eq(self.sfp0_sink.valid),
+            sfp0_test_monitor.data.eq(self.sfp0_sink.data),
+            sfp0_test_monitor.last.eq(self.sfp0_sink.last),
+            sfp0_test_monitor.error.eq(self.sfp0_sink.error),
+            sfp0_test_monitor.expected.eq(
+                (transaction_state == self.CABLE_RETURN) & self.active_direction
+            ),
+            sfp1_test_monitor.valid.eq(self.sfp1_sink.valid),
+            sfp1_test_monitor.data.eq(self.sfp1_sink.data),
+            sfp1_test_monitor.last.eq(self.sfp1_sink.last),
+            sfp1_test_monitor.error.eq(self.sfp1_sink.error),
+            sfp1_test_monitor.expected.eq(
+                (transaction_state == self.CABLE_RETURN) & ~self.active_direction
+            ),
+            self.sfp0_unexpected_test_frames.eq(sfp0_test_monitor.unexpected_test_frames),
+            self.sfp1_unexpected_test_frames.eq(sfp1_test_monitor.unexpected_test_frames),
             local_busy.eq(host_ingress.busy | sfp0_return.busy | sfp1_return.busy),
             self.busy.eq((transaction_state != self.IDLE) | local_busy),
         ]
@@ -175,7 +253,7 @@ class CableLoop(Module):
         self.sync += If(
             transaction_state == self.IDLE,
             If(
-                self.enable & host_ingress.frame_start,
+                self.enable & host_ingress.frame_start & ~host_ingress.frame_done,
                 transaction_state.eq(self.HOST_INGRESS),
             ),
             return_wait.eq(0),

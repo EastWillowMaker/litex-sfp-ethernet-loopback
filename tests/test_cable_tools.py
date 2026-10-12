@@ -360,6 +360,34 @@ def test_frame_rejections_are_reported_without_becoming_receive_errors(tmp_path)
     assert report["hardware_evidence"]["error_deltas"]["host_ingress_error_frames"] == 0
 
 
+def test_unexpected_sfp_test_frame_fails_otherwise_valid_host_and_route_evidence(tmp_path):
+    bus = CableBus()
+    bus.regs.sfp0_unexpected_test_frames = Register()
+    transport = CableTransport(bus)
+    original_send = transport.send
+
+    def send_with_unexpected_sfp_frame(frame):
+        original_send(frame)
+        bus.regs.sfp0_unexpected_test_frames.value += 1
+
+    transport.send = send_with_unexpected_sfp_frame
+    usb_interface(tmp_path)
+    report_path = tmp_path / "cable.json"
+    status = cable_host.main(
+        ["--interface", "enxtest", "--direction", "sfp1-to-sfp2",
+         "--run-id", "42", "--report", str(report_path)],
+        interface_root=tmp_path, bus_factory=lambda *args, **kwargs: bus,
+        transport_factory=lambda name: transport, phy_status_reader=good_phy_status,
+    )
+    report = json.loads(report_path.read_text())
+
+    assert status == 1
+    assert report["host_result"]["passed"] is True
+    assert all(item["passed"] for item in report["hardware_evidence"]["route_assertions"].values())
+    assert report["hardware_evidence"]["error_deltas"]["sfp0_unexpected_test_frames"] == 1000
+    assert report["hardware_evidence"]["passed"] is False
+
+
 def test_clause22_mdio_reads_one_finite_reply_and_rejects_invalid_addresses():
     class Writer:
         def __init__(self):
@@ -486,6 +514,49 @@ def test_rtl8211f_delay_configuration_preserves_other_bits_and_restores_page():
     assert result["phy_tx_delay_enabled"] is False
     assert result["phy_rx_delay_enabled"] is True
     assert phy.page == 0x0007
+
+
+def test_rtl8211f_status_and_configuration_verify_page_restoration():
+    class PHY:
+        def __init__(self, *, fail_select=False, fail_restore=False):
+            self.page = 0x0007
+            self.fail_select = fail_select
+            self.fail_restore = fail_restore
+            self.pages = {
+                0x0007: {2: 0x001C, 3: 0xC916, 0: 0x1140, 1: 0x796D},
+                0x0D08: {0x11: 0x814A, 0x15: 0x80A3},
+            }
+
+        def read(self, address, register):
+            if register == cable_diagnostics.RTL8211F_PAGE_REGISTER:
+                return self.page
+            return self.pages.setdefault(self.page, {}).get(register, 0)
+
+        def write(self, address, register, value):
+            if register == cable_diagnostics.RTL8211F_PAGE_REGISTER:
+                if value == cable_diagnostics.RTL8211F_RGMII_PAGE and self.fail_select:
+                    return
+                if value == 0x0007 and self.fail_restore:
+                    return
+                self.page = value
+                return
+            self.pages.setdefault(self.page, {})[register] = value
+
+    for fail_select, fail_restore, expected_error in (
+        (False, True, "PHY page restore failed"),
+        (True, False, "PHY page select failed"),
+    ):
+        for operation in (
+            cable_diagnostics.read_rtl8211f_status,
+            cable_diagnostics.configure_rtl8211f_delays,
+        ):
+            phy = PHY(fail_select=fail_select, fail_restore=fail_restore)
+            try:
+                operation(phy)
+            except RuntimeError as error:
+                assert expected_error in str(error)
+            else:
+                raise AssertionError("A PHY page selection/restoration failure was accepted")
 
 
 def test_phy_diagnostics_do_not_report_pass_when_link_or_delay_health_fails(tmp_path, monkeypatch):
