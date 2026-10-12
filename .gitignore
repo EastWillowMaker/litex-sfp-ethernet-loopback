@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+build/
+artifacts/
+litex/
+litex-boards/
+liteeth/
+liteiclink/
+*.egg-info/
+*.log
+*.jou
+*.str
+*.pyc
+scripts/.Xil/
+.Xil/
