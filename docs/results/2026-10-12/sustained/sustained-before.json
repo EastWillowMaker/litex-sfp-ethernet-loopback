@@ -1,0 +1,15 @@
+{
+  "link": 1,
+  "lock": 1,
+  "tx_ready": 1,
+  "rx_ready": 1,
+  "loss_of_signal": 0,
+  "rx_frames": 1000,
+  "tx_frames": 1000,
+  "rejected_frames": 1920,
+  "error_frames": 1424,
+  "overflow_frames": 0,
+  "mac_rx_datapath_crc_errors": 2242,
+  "mac_rx_datapath_preamble_errors": 2188060,
+  "mac_rx_datapath_drops": 1
+}

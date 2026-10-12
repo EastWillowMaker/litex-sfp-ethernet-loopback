@@ -36,3 +36,24 @@ and the flash-loaded image returned all 1,000 expected frames without errors.
 - No additional flash erase was needed after correcting boot-result handling.
 
 Totals: Standards 2 findings, highest medium, both fixed; Spec 0 findings.
+
+## Sustained correctness continuation
+
+Fixed point `7d149fc`; implementation `17f3ade`.
+Independent reviewers inspected `git diff 7d149fc...17f3ade` against
+`docs/sustained-loopback-test.md`.
+
+### Standards
+
+No findings. Successful reply history is bounded, timing and rate labels are
+clear, and transport/clock tests cover relevant behavior.
+
+### Spec
+
+No implementation mismatches. Timed size cycling, historical anomaly checks,
+deadline behavior, partial failures and original fixed-count compatibility
+match the spec. Subsequent saved hardware evidence verifies all 377,615
+frames, matching board counter deltas, zero new errors/drops and a continuing
+1 Gbps link.
+
+Continuation totals: Standards 0 findings; Spec 0 findings.

@@ -1,0 +1,43 @@
+{
+  "interface": "enx98fc84e0c4e8",
+  "passed": true,
+  "completed": true,
+  "errors": [],
+  "mode": "sustained_correctness",
+  "requested_duration_seconds": 60.0,
+  "run_id": "77b0a86252d95a43",
+  "expected": 377615,
+  "sent": 377615,
+  "received": 377615,
+  "missing": 0,
+  "duplicate": 0,
+  "corrupt": 0,
+  "stale": 0,
+  "unexpected": 0,
+  "ignored": 0,
+  "sent_bytes": 186541810,
+  "received_bytes": 186541810,
+  "frames_by_size": {
+    "60": 75523,
+    "128": 75523,
+    "256": 75523,
+    "512": 75523,
+    "1514": 75523
+  },
+  "throughput_basis": "Stop-and-wait returned Ethernet frame bytes excluding FCS, preamble and gap; measured host workload, not line capacity",
+  "active_seconds": 60.000142,
+  "elapsed_seconds": 61.00099,
+  "received_mbps": 24.872183,
+  "received_frames_per_second": 6293.568484,
+  "host_mac": "98:fc:84:e0:c4:e8",
+  "timestamp_utc": "2026-10-12T14:38:28Z",
+  "frame_sizes": [
+    60,
+    128,
+    256,
+    512,
+    1514
+  ],
+  "frames_per_size": null,
+  "timeout_seconds": 1.0
+}

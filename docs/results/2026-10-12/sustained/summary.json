@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "firmware_source_commit": "7d149fc",
+  "host_source_commit": "17f3ade",
+  "requested_duration_seconds": 60,
+  "active_seconds": 60.000142,
+  "elapsed_seconds": 61.00099,
+  "frames_sent": 377615,
+  "frames_verified": 377615,
+  "frames_by_size": {
+    "60": 75523,
+    "128": 75523,
+    "256": 75523,
+    "512": 75523,
+    "1514": 75523
+  },
+  "received_mbps": 24.872183,
+  "received_frames_per_second": 6293.568484,
+  "throughput_basis": "Stop-and-wait returned Ethernet frame bytes excluding FCS, preamble and gap; measured host workload, not line capacity",
+  "link_speed_mbps": 1000,
+  "board_counter_deltas": {
+    "rx_frames": 377615,
+    "tx_frames": 377615,
+    "rejected_frames": 0,
+    "error_frames": 0,
+    "overflow_frames": 0,
+    "mac_rx_datapath_crc_errors": 0,
+    "mac_rx_datapath_preamble_errors": 0,
+    "mac_rx_datapath_drops": 0
+  },
+  "validation": "Existing SPI-booted image; no rebuild or flash write for this milestone.",
+  "test_suite": {
+    "passed": 51,
+    "duration_seconds": 115.3
+  },
+  "typecheck": "passed (7 first-party files)",
+  "review": {
+    "standards_findings": 0,
+    "spec_findings": 0,
+    "fixed_point": "7d149fc"
+  }
+}

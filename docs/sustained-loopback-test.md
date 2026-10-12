@@ -46,3 +46,22 @@ Use the previously agreed host runner and CLI/report boundaries. Simulated
 transport and monotonic clock exercise deadlines, size cycling, historical
 duplicates, missed replies and failures. No FPGA rebuild or flash write is
 needed for this milestone.
+
+## Completed validation (2026-10-12)
+
+- Traffic interval: 60.000142 seconds; total elapsed including final duplicate
+  check: 61.000990 seconds.
+- Sent and verified: 377,615 frames, 75,523 at each of the five sizes.
+- All host anomaly counters were zero. Board RX and TX each increased by
+  377,615; rejection, receive-error, CRC-error, preamble-error, overflow and
+  MAC-drop counters did not increase.
+- Link remained established at 1 Gbps.
+- Observed stop-and-wait rate: 6,293.568484 frames/s and 24.872183 Mbps of
+  returned Ethernet frame bytes, excluding FCS, preamble and inter-frame gap.
+- All 51 tests passed in 115.30 seconds. Mypy passed on the seven first-party
+  Python files. Independent standards and spec reviews found no issues.
+- The original SPI image remained in use throughout this milestone.
+
+The [saved report and counter comparison](results/2026-10-12/sustained/summary.json)
+contain the acceptance evidence. The observed rate is limited by this
+stop-and-wait host workload; maximum board throughput remains unmeasured.
