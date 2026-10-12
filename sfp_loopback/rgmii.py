@@ -19,10 +19,10 @@ class RegionalRGMIIClockReset(LiteXModule):
         self.cd_eth_tx = ClockDomain()
         self.cd_eth_tx_delayed = ClockDomain(reset_less=True)
 
-        # C19 is the N side of its CCIO pair, so it cannot directly drive a
-        # BUFG. Route only its IBUF output to a regional BUFR near the RGMII
-        # bank; the RX MAC and its BRAM FIFOs then remain on the local clock
-        # network instead of adding a full-device BUFG distribution delay.
+        # The corrected target resource puts PHY RXC on C18, the P/master side
+        # of the CCIO pair. Its IBUF can use the dedicated clock route to a
+        # regional BUFR near the RGMII bank; the RX MAC and its BRAM FIFOs then
+        # remain on the local clock network instead of a full-device BUFG.
         rx_clk_ibuf = Signal(name="rtl8211f_rgmii_rx_ibuf")
         rx_clk_ibuf.name_override = "rtl8211f_rgmii_rx_ibuf"
         self.specials += Instance(

@@ -7,6 +7,7 @@ from pathlib import Path
 from migen import ClockDomain, Instance, Signal
 from migen.genlib.cdc import MultiReg
 from litex.gen import ClockDomainsRenamer, LiteXModule
+from litex.build.generic_platform import IOStandard, Pins, Subsignal
 from litex.soc.cores.clock import S7IDELAYCTRL
 from litex.soc.cores.spi_flash import S7SPIFlash
 from litex.soc.integration.builder import Builder
@@ -151,6 +152,18 @@ class CableSoC(SoCCore):
 
     def __init__(self):
         platform = Platform()
+        # The stock board definition reverses these two schematic labels.
+        # Keep the correction local to this target so the existing SFP2 target
+        # continues to use its original platform resource unchanged.
+        platform.add_extension([
+            (
+                "cable_eth_clocks",
+                0,
+                Subsignal("tx", Pins("C19")),
+                Subsignal("rx", Pins("C18")),
+                IOStandard("LVCMOS33"),
+            )
+        ])
         sys_clk_freq = 50e6
         self.crg = CableClockReset(platform, sys_clk_freq)
         super().__init__(
@@ -195,7 +208,7 @@ class CableSoC(SoCCore):
         self.sfp0_mac = self._make_mac(self.sfp0_phy, index=0)
         self.sfp1_mac = self._make_mac(self.sfp1_phy, index=1)
 
-        rgmii_clocks = platform.request("eth_clocks")
+        rgmii_clocks = platform.request("cable_eth_clocks")
         self.host_phy = RegionalS7PHYRGMII(
             clock_pads=rgmii_clocks,
             pads=platform.request("eth"),
@@ -343,18 +356,6 @@ class CableSoC(SoCCore):
             platform.add_period_constraint(phy.txoutclk, 16.0)
             platform.add_period_constraint(phy.rxoutclk, 16.0)
 
-        # The board routes RTL8211F RXC to C19, the N side of the C18/C19
-        # CCIO pair; C18 is occupied by the separate TXC output. The custom
-        # PHY uses IBUF -> regional BUFR, then keeps RX capture and associated
-        # BRAMs local to the source bank. Allow fabric routing only on this
-        # named IBUF-output segment. AMD UG903 warns this can still make clock
-        # skew unpredictable, so routed setup/hold are checked before emitting
-        # a bitstream.
-        platform.add_platform_command(
-            "set_property CLOCK_DEDICATED_ROUTE FALSE "
-            "[get_nets rtl8211f_rgmii_rx_ibuf]"
-        )
-
         # Keep crossings between the system, onboard RGMII, and independent
         # recovered SFP clocks asynchronous. Generated clocks within a path
         # remain grouped with their root clock. Use clock names, not derived
@@ -383,7 +384,8 @@ class CableSoC(SoCCore):
         # while pre-synthesis Tcl runs before synthesis has opened one.
         # Timing values are relative to the PHY-facing clock at each port.
         platform.add_platform_command(
-            "create_clock -name eth_clocks_rx -period 8.0 [get_ports eth_clocks_rx]"
+            "create_clock -name eth_clocks_rx -period 8.0 "
+            "[get_ports cable_eth_clocks_rx]"
         )
         platform.add_platform_command(
             "set_input_delay -clock [get_clocks eth_clocks_rx] -max 2.8 "
@@ -408,7 +410,7 @@ class CableSoC(SoCCore):
         platform.toolchain.pre_optimize_commands.add(
             "create_generated_clock -name rtl8211f_rgmii_tx "
             "-source [get_pins rtl8211f_tx_clock_oddr/C] -divide_by 1 "
-            "[get_ports eth_clocks_tx]"
+            "[get_ports cable_eth_clocks_tx]"
         )
         platform.toolchain.pre_optimize_commands.add(
             "set_output_delay -clock [get_clocks rtl8211f_rgmii_tx] -max 1.0 "

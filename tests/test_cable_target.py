@@ -200,11 +200,14 @@ def test_build_constrains_documented_reference_and_rgmii_clocks(tmp_path):
     verilog = (gateware / "sfp_cable_loopback.v").read_text(encoding="utf-8")
 
     assert "create_clock -name onboard_gtp_refclk_p -period 8.0" in xdc
-    assert "create_clock -name eth_clocks_rx -period 8.0" in xdc
     assert (
-        "set_property CLOCK_DEDICATED_ROUTE FALSE "
-        "[get_nets rtl8211f_rgmii_rx_ibuf]"
+        "create_clock -name eth_clocks_rx -period 8.0 "
+        "[get_ports cable_eth_clocks_rx]"
     ) in xdc
+    assert "set_property LOC C18 [get_ports {cable_eth_clocks_rx}]" in xdc
+    assert "set_property LOC C19 [get_ports {cable_eth_clocks_tx}]" in xdc
+    assert "CLOCK_DEDICATED_ROUTE" not in xdc
+    assert "CLOCK_DEDICATED_ROUTE" not in tcl
     assert "set_clock_groups -asynchronous" in tcl
     assert "get_timing_paths -delay_type max -max_paths 1" in tcl
     assert "get_timing_paths -delay_type min -max_paths 1" in tcl
@@ -219,7 +222,7 @@ def test_build_constrains_documented_reference_and_rgmii_clocks(tmp_path):
     assert "create_generated_clock -name rtl8211f_rgmii_tx" in tcl
     assert (
         "-source [get_pins rtl8211f_tx_clock_oddr/C] -divide_by 1 "
-        "[get_ports eth_clocks_tx]"
+        "[get_ports cable_eth_clocks_tx]"
     ) in tcl
     assert "set_input_delay -clock [get_clocks eth_clocks_rx] -max 2.8" in xdc
     assert "set_input_delay -clock [get_clocks eth_clocks_rx] -min 1.2" in xdc
@@ -237,7 +240,7 @@ def test_build_constrains_documented_reference_and_rgmii_clocks(tmp_path):
     assert "rtl8211f_rgmii_rx_ibuf" in verilog
     assert "rtl8211f_rgmii_rx_regional_clk" in verilog
     assert "BUFR" in verilog
-    assert ".I (eth_clocks_rx)" in verilog
+    assert ".I (cable_eth_clocks_rx)" in verilog
     assert ".O (rtl8211f_rgmii_rx_ibuf)" in verilog
     assert ".I   (rtl8211f_rgmii_rx_ibuf)" in verilog
     assert ".O   (rtl8211f_rgmii_rx_regional_clk)" in verilog

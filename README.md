@@ -142,12 +142,13 @@ Build the separate three-port image:
 
 The RGMII target shifts the FPGA transmit clock by 2 ns. Its setup command
 disables the RTL8211F internal TX delay and enables its internal RX clock
-delay, checking the PHY ID and register readback. Run the setup command after
+delay, discovering the unique RTL8211F management address and checking its
+PHY ID and register readback. Run the setup command after
 loading or rebooting the image. Both SFP links and the host link must be at
 1 Gbps before running the frame test.
 
-The fixed C19 receive-clock wiring requires a scoped fabric-routing exception
-and a regional receive clock. The target checks routed setup/hold before
+The dedicated target corrects the upstream platform clock mapping: board
+RXC is C18 and TXC is C19. The target checks routed setup/hold before
 emitting an image. Its RGMII input timing assumes an 8 ns, 50% clock waveform
 and matched board traces; full datasheet period/duty extremes are outside
 this experimental test target's STA model.
