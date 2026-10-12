@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from sfp_loopback.cable_diagnostics import read_cable_status
 from sfp_loopback.diagnostics import BoundedUART, read_flash_id, read_status
 
 
@@ -25,6 +26,10 @@ def main():
     mode.add_argument("--flash", action="store_true", help="Identify flash, program, verify, and boot its image.")
     mode.add_argument("--boot", action="store_true", help="Boot the existing SPI image without reprogramming.")
     parser.add_argument("--output-dir", type=Path, default=Path("build/sfp2"))
+    parser.add_argument("--image-basename", default="sfp2_loopback",
+                        help="Gateware image basename (default: sfp2_loopback)")
+    parser.add_argument("--status-profile", choices=("sfp2", "cable"), default="sfp2",
+                        help="UART status reader matching the loaded target")
     parser.add_argument("--port", default="/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0")
     parser.add_argument("--target", default="localhost:3121/xilinx_tcf/Digilent/210357A7D00EA")
     parser.add_argument("--report", type=Path, default=Path("artifacts/programming.json"))
@@ -33,7 +38,9 @@ def main():
     if vivado is None:
         parser.error("vivado must be on PATH")
     operation = "load" if args.load else "flash" if args.flash else "boot"
-    image = args.output_dir / "gateware" / ("sfp2_loopback.bin" if args.flash else "sfp2_loopback.bit")
+    if not args.image_basename or Path(args.image_basename).name != args.image_basename or args.image_basename in (".", ".."):
+        parser.error("--image-basename must be a filename without a directory")
+    image = args.output_dir / "gateware" / (args.image_basename + (".bin" if args.flash else ".bit"))
     if not args.boot and not image.is_file():
         parser.error(f"Build the image first: {image}")
     report = {"operation": operation, "image": str(image.resolve()), "target": args.target}
@@ -60,9 +67,10 @@ def main():
         report["vivado_returncode"] = result.returncode
         if result.returncode == 0:
             with BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv")) as bus:
-                report["status_after_boot"] = read_status(bus)
+                status_reader = read_status if args.status_profile == "sfp2" else read_cable_status
+                report["status_after_boot"] = status_reader(bus)
             report["passed"] = True
-    except (OSError, RuntimeError, ValueError) as error:
+    except (OSError, RuntimeError, ValueError, AttributeError) as error:
         report["error"] = f"{type(error).__name__}: {error}"
     args.report.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))

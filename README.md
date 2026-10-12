@@ -1,4 +1,12 @@
-# Rise Pro SFP2 frame loopback
+# Rise Pro Ethernet frame tests
+
+The latest test uses the board's RTL8211F RJ45 connection as the host port,
+with an RJ45 cable directly joining two copper SFP modules in SFP1 and SFP2.
+The FPGA sends host test frames across that external cable and returns them
+through RTL8211F for exact host verification. Both SFP directions are tested
+separately. See [the cable-loop plan](docs/sfp-cross-port-test.md).
+
+The original SFP2-only test remains available as the validated baseline below.
 
 This project tests an EmbedFire Rise Pro XC7A35T with a Dawnray SFP-GE-T
 copper module in SFP2. A USB Gigabit Ethernet adapter sends 1,000 Ethernet
@@ -105,9 +113,82 @@ If carrier remains absent, check `lock`, `tx_ready`, `rx_ready`, `link` and
 Tests cover the byte-stream responder, the host transport/report boundary,
 and real LiteEth MAC simulation with FCS and clock-domain crossings. Vendor
 HDL libraries lack Python type stubs, so their imports are skipped by mypy.
+Install Verilator and a C++ compiler to run the three-MAC cable simulations
+quickly. Without Verilator those tests use the slower Migen Python simulator.
 Vivado synthesis, timing, flash boot and real cable results are distinct
 validation stages; a software or simulation pass does not establish a
 hardware cable pass.
 
 See [the agreed design](docs/ethernet-loop-test.md) and
 [hardware evidence](docs/hardware-inventory.md) for wiring and test decisions.
+
+## RTL8211F and SFP cable-loop setup
+
+Connect the Host PC USB Ethernet adapter to the board's RTL8211F RJ45 port.
+Connect SFP1 and SFP2 through their copper modules with an RJ45 Ethernet cable.
+Keep USB UART and JTAG connected for control and programming. No second host
+Ethernet adapter, host bridge or IP address is needed.
+
+Build the separate three-port image:
+
+```bash
+.venv/bin/python -m sfp_loopback.cable_target --build
+.venv/bin/python -m sfp_loopback.program --load \
+  --output-dir build/sfp_cable --image-basename sfp_cable_loopback \
+  --status-profile cable --report artifacts/cable/sram-load.json
+.venv/bin/python -m sfp_loopback.cable_diagnostics --phy --configure-delays \
+  --output artifacts/cable/phy-configuration.json
+```
+
+The RGMII target shifts the FPGA transmit clock by 2 ns. Its setup command
+disables the RTL8211F internal TX delay and enables its internal RX clock
+delay, checking the PHY ID and register readback. Run the setup command after
+loading or rebooting the image. Both SFP links and the host link must be at
+1 Gbps before running the frame test.
+
+The fixed C19 receive-clock wiring requires a scoped fabric-routing exception
+and a regional receive clock. The target checks routed setup/hold before
+emitting an image. Its RGMII input timing assumes an 8 ns, 50% clock waveform
+and matched board traces; full datasheet period/duty extremes are outside
+this experimental test target's STA model.
+
+Run 1,000 frames in each direction, with 200 frames at each baseline size:
+
+```bash
+sudo .venv/bin/python -m sfp_loopback.cable_host \
+  --interface enx98fc84e0c4e8 --direction sfp1-to-sfp2 \
+  --report artifacts/cable/sfp1-to-sfp2-fixed.json
+sudo .venv/bin/python -m sfp_loopback.cable_host \
+  --interface enx98fc84e0c4e8 --direction sfp2-to-sfp1 \
+  --report artifacts/cable/sfp2-to-sfp1-fixed.json
+```
+
+Then run each direction for 60 seconds using the same commands with
+`--duration 60` and separate report filenames. Each command selects the
+direction over UART, verifies exact host replies, records per-port counters,
+and disables test forwarding on completion. A pass requires both host
+correctness and the expected SFP transmit/receive counter changes, with zero
+new error, overflow, CRC, preamble or drop counts. Unrelated-frame rejection
+is recorded separately. These runs measure correctness and the observed
+stop-and-wait rate.
+
+For the physical negative control, disconnect the SFP cable while leaving
+the host/RTL8211F cable connected. Frames must not return. Reconnect the cable
+and verify that both links and successful tests recover. The SFP
+`control_tx_disable` UART registers also support a diagnostic negative
+control without moving cables.
+
+After passing SRAM validation, program and verify the persistent image:
+
+```bash
+.venv/bin/python -m sfp_loopback.program --flash \
+  --output-dir build/sfp_cable --image-basename sfp_cable_loopback \
+  --status-profile cable --report artifacts/cable/spi-flash.json
+.venv/bin/python -m sfp_loopback.cable_diagnostics --phy --configure-delays \
+  --output artifacts/cable/flash-phy-configuration.json
+```
+
+Repeat both fixed-count and timed runs after SPI boot. This replaces the
+existing flash boot image using the previously authorized programming
+workflow. Simulation, FPGA timing, programming and real cable evidence are
+reported separately.
