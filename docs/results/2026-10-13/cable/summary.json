@@ -24,7 +24,7 @@
   "sram_loaded": true,
   "phy_configuration_verified": true,
   "host_interface": "enx98fc84e0c4e8",
-  "qualification_status": "All four SRAM runs passed; physical disconnected-cable and SPI-boot qualification pending",
+  "qualification_status": "PASS: SRAM, physical disconnect/recovery, SPI program/verify/boot, and all four SPI-booted runs",
   "timing_limitations": "Nominal 8 ns 50% waveform and matched traces; full PHY period/duty variation and measured PCB skew are not covered. No fabric clock routing exception.",
   "gateware_source_commit": "e7b2336",
   "loaded_host_client_commit": "27c099a",
@@ -57,5 +57,41 @@
       "passed": true,
       "frames": 283933
     }
-  ]
+  ],
+  "physical_negative_control": {
+    "passed": true,
+    "directions": 2,
+    "sent_per_direction": 5,
+    "received_per_direction": 0,
+    "selected_sfp_tx_per_direction": 5,
+    "host_return_per_direction": 0
+  },
+  "spi_program_verified": true,
+  "spi_boot_verified": true,
+  "cold_power_cycle_tested": false,
+  "recovery_smoke_passed": true,
+  "spi_host_client_commit": "4eebd55",
+  "spi_runs": [
+    {
+      "file": "spi/sfp1-to-sfp2-fixed.json",
+      "passed": true,
+      "frames": 1000
+    },
+    {
+      "file": "spi/sfp1-to-sfp2-sustained.json",
+      "passed": true,
+      "frames": 274561
+    },
+    {
+      "file": "spi/sfp2-to-sfp1-fixed.json",
+      "passed": true,
+      "frames": 1000
+    },
+    {
+      "file": "spi/sfp2-to-sfp1-sustained.json",
+      "passed": true,
+      "frames": 274345
+    }
+  ],
+  "host_network_manager_restored": true
 }

@@ -11,8 +11,8 @@ This document records preparation; no bridge gateware was implemented or loaded.
 |---|---|---|
 | Original SFP2 echo and flash boot | PASS | `results/2026-10-12/summary.json` and sustained results |
 | Three-port cable-loop SRAM traffic | PASS | 1,000 frames and 60 seconds in each direction; `results/2026-10-13/cable/summary.json` |
-| Cable-loop physical disconnect control | BLOCKED | Operator has not confirmed disconnection; live UART still reports both SFP links up and LOS clear |
-| Cable-loop SPI qualification | NOT RUN | Depends on the physical control and recovery; prior flash image preserved |
+| Cable-loop physical disconnect control | PASS | Both directions sent five frames with zero cable returns; reconnect recovery returned five frames |
+| Cable-loop SPI qualification | PASS | Program/verify/boot and all four traffic runs; saved cable results |
 | Software regression suite | PASS | 95 tests; first-party mypy clean in saved evidence |
 | Cable-loop routed timing | PASS | Setup 0.215 ns, hold 0.037 ns; documented nominal RGMII timing assumptions |
 | Two-NIC bridge hardware fixture | BLOCKED | Only RTL8153 `enx98fc84e0c4e8` currently enumerates as a suitable physical Ethernet NIC |
@@ -58,5 +58,6 @@ authorization applies to the cable-loop milestone, not automatically to the brid
 | migen | `e19524c963a8342952840983047557707fbe0b6a` |
 
 No existing source or result was replaced, and no expensive build was repeated
-for this audit. Next cable-loop action: operator disconnects the joining RJ45
-cable while preserving the Host–RTL8211F cable, then run the negative test.
+for this audit. The cable loop is now qualified. Next action: implement the separate bridge
+experiment and complete its independent simulation/build checks. Physical
+bridge traffic still requires a second suitable NIC.

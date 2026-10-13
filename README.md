@@ -210,5 +210,5 @@ nmcli device set enx98fc84e0c4e8 managed yes
 ```
 
 The [2026-10-13 SRAM evidence](docs/results/2026-10-13/cable/summary.json)
-records both-direction fixed and sustained passes. Physical cable-disconnect
-and SPI-boot qualification are pending.
+records both-direction fixed and sustained passes from SRAM and SPI boot,
+plus physical cable-disconnect and recovery checks.

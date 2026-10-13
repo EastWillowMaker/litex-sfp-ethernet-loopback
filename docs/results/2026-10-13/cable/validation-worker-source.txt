@@ -1,0 +1,112 @@
+"""Run the agreed tests under one locally authenticated invocation."""
+import os
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from sfp_loopback.cable_host import main
+from sfp_loopback import host
+from sfp_loopback.cable_diagnostics import read_cable_status
+from sfp_loopback.diagnostics import BoundedUART
+import json
+import secrets
+import time
+
+project = Path(__file__).resolve().parents[2]
+os.chdir(project)
+def execute(phase):
+    if phase not in ('sram', 'spi', 'smoke', 'negative'):
+        raise ValueError('Unknown validation phase')
+    if phase == 'negative':
+        return execute_negative()
+    result_dir = project / 'artifacts' / 'cable' / phase
+    result_dir.mkdir(parents=True, exist_ok=True)
+    # Diagnose a bad PHY/frame path with five requests rather than 1000 timeouts.
+    with BoundedUART('/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0',
+                     csr_csv='build/sfp_cable/csr.csv') as bus:
+        bus.regs.cable_control_enable.write(0)
+        bus.regs.cable_control_direction.write(0)
+        before = read_cable_status(bus)
+        bus.regs.cable_control_enable.write(1)
+        transport = host.RawEthernet('enx98fc84e0c4e8')
+        try:
+            smoke = host.run_test(transport, host.inspect_interface('enx98fc84e0c4e8'),
+                                  secrets.randbits(64), per_size=1)
+        finally:
+            transport.close()
+            bus.regs.cable_control_enable.write(0)
+            time.sleep(1.1)
+        after = read_cable_status(bus)
+        (result_dir / 'smoke.json').write_text(json.dumps(
+            {'host': smoke, 'before': before, 'after': after}, indent=2) + '\n')
+        print('Smoke received', smoke['received'], '/', smoke['expected'], flush=True)
+        if not smoke['passed']:
+            raise SystemExit(1)
+    if phase in ('smoke', 'negative'):
+        return
+    for direction in ('sfp1-to-sfp2', 'sfp2-to-sfp1'):
+        for mode in ('fixed', 'sustained'):
+            args = ['--interface', 'enx98fc84e0c4e8', '--direction', direction,
+                    '--report', str(result_dir / f'{direction}-{mode}.json')]
+            if mode == 'sustained':
+                args += ['--duration', '60']
+            result = main(args)
+            if result:
+                raise SystemExit(result)
+
+def execute_negative():
+    result_dir = project / 'artifacts/cable/negative'
+    result_dir.mkdir(parents=True, exist_ok=True)
+    for direction, label in enumerate(('sfp1-to-sfp2', 'sfp2-to-sfp1')):
+        with BoundedUART('/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0', csr_csv='build/sfp_cable/csr.csv') as bus:
+            bus.regs.cable_control_enable.write(0)
+            deadline = time.monotonic() + 2
+            while bus.regs.cable_status_busy.read():
+                if time.monotonic() > deadline:
+                    raise RuntimeError('Router remained busy before negative control')
+                time.sleep(.01)
+            bus.regs.cable_control_direction.write(direction)
+            assert bus.regs.cable_control_direction.read() == direction
+            before = read_cable_status(bus)
+            assert not before['sfp0_link_up'] and not before['sfp1_link_up']
+            bus.regs.cable_control_enable.write(1)
+            transport = host.RawEthernet('enx98fc84e0c4e8')
+            try:
+                result = host.run_test(transport, host.inspect_interface('enx98fc84e0c4e8'), secrets.randbits(64), per_size=1, timeout=1.2)
+            finally:
+                transport.close()
+                bus.regs.cable_control_enable.write(0)
+                time.sleep(1.1)
+            after = read_cable_status(bus)
+            delta = {k: (after[k]-before[k]) & 0xffffffff for k in before}
+            tx, rx = direction, 1-direction
+            expected = {'host_ingress_rx_frames':5, 'host_ingress_tx_frames':5, f'sfp{tx}_tx_frames':5, f'sfp{rx}_return_rx_frames':0, f'sfp{rx}_return_tx_frames':0, 'host_tx_frames':0}
+            passed = result['sent']==5 and result['received']==0 and result['missing']==5 and all(result[k]==0 for k in ('duplicate','corrupt','stale','unexpected')) and all(delta[k]==v for k,v in expected.items())
+            report = {'passed':passed, 'direction':label, 'physical_cable_disconnected':True, 'timeout_seconds':1.2, 'timeout_reason':'Allow the one-second FPGA transaction timeout to release busy before the next probe', 'host':result, 'before':before, 'after':after, 'counter_deltas':delta, 'expected_route_deltas':expected}
+            (result_dir / (label+'.json')).write_text(json.dumps(report,indent=2)+'\n')
+            print('Physical negative control:',label,'passed=',passed,flush=True)
+            if not passed:
+                raise RuntimeError('Physical negative control failed')
+
+if sys.argv[1] != 'serve':
+    execute(sys.argv[1])
+else:
+    request = project / 'artifacts/cable/validation-request.txt'
+    completed = project / 'artifacts/cable/validation-completed.json'
+    deadline = time.monotonic() + 3600
+    print('Authenticated test worker ready for fixed validation phases.', flush=True)
+    while time.monotonic() < deadline:
+        if not request.exists():
+            time.sleep(0.25)
+            continue
+        phase = request.read_text().strip()
+        request.unlink()
+        result = {'phase': phase, 'finished': False}
+        try:
+            execute(phase)
+            result['finished'] = True
+        except (Exception, SystemExit) as error:
+            result['error'] = str(error)
+            print(type(error).__name__, str(error), flush=True)
+        completed.write_text(json.dumps(result, indent=2) + '\n')
+        print('Validation phase completed:', phase, flush=True)
+    print('Authenticated test worker expired.', flush=True)
