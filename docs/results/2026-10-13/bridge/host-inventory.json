@@ -1,0 +1,23 @@
+{
+  "status": "BLOCKED",
+  "physical_interfaces": {
+    "enx98fc84e0c4e8": {
+      "device": "/sys/devices/pci0000:00/0000:00:08.3/0000:68:00.3/usb6/6-1/6-1.2/6-1.2:1.0",
+      "carrier": true,
+      "speed_mbps": 1000,
+      "mac": "98:fc:84:e0:c4:e8",
+      "layers": [],
+      "isolation_ready": true,
+      "isolation_reasons": []
+    }
+  },
+  "default_route_interfaces": [
+    "wlp99s0"
+  ],
+  "ssh_route_interfaces": [],
+  "iperf3": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge/iperf3",
+  "readiness_reasons": [
+    "Two independent unconfigured physical 1 Gbps Ethernet NICs are required"
+  ],
+  "note": "Read-only inventory; setup separately requires --confirm-isolation."
+}

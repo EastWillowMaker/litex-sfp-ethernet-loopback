@@ -3,7 +3,9 @@
 Audit date: 2026-10-13. Existing main: `89117c6`.
 Request: attached `pasted-text-1.txt`, read before this audit.
 The bridge experiment follows completion of the current RTL8211F cable loop.
-This document records preparation; no bridge gateware was implemented or loaded.
+This document records the initial preparation audit. The separate bridge is now
+implemented and built; see [the test procedure](dual-sfp-bridge-test.md).
+No bridge image has been loaded for hardware qualification.
 
 ## Current evidence
 
@@ -58,6 +60,5 @@ authorization applies to the cable-loop milestone, not automatically to the brid
 | migen | `e19524c963a8342952840983047557707fbe0b6a` |
 
 No existing source or result was replaced, and no expensive build was repeated
-for this audit. The cable loop is now qualified. Next action: implement the separate bridge
-experiment and complete its independent simulation/build checks. Physical
-bridge traffic still requires a second suitable NIC.
+for this audit. The cable loop is now qualified. The separate bridge experiment now passes independent simulation/build checks.
+Physical bridge traffic still requires a second suitable NIC.

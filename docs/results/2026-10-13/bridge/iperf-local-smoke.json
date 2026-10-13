@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "scope": "Localhost executable smoke only; NOT FPGA throughput",
+  "client_returncode": 0,
+  "server_returncode": 0
+}

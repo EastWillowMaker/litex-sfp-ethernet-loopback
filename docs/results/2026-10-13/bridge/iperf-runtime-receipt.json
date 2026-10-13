@@ -1,0 +1,10 @@
+{
+  "installation": "Private extracted packages; no system package or daemon changes",
+  "packages_sha256": {
+    "iperf3_3.20-2_amd64.deb": "d250f399e089044b44b6bea8a773c8be04af3bdfbe69d4ca92c46bba0a08e6f8",
+    "libiperf0_3.20-2_amd64.deb": "177daa30cb8b3d70646298c054355914cd9775c0249719d4abdded4f6aae51ae",
+    "libsctp1_1.0.21+dfsg-1build2_amd64.deb": "92924c463cf0e6630b1e9fd3969d45b21558f7ecbf0c9ef12c80523669f8a271"
+  },
+  "wrapper": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge/iperf3",
+  "version": "iperf 3.20 (cJSON 1.7.15)\nLinux eastwillow-FA401WU 7.0.0-38-generic #38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026 x86_64\nOptional features available: CPU affinity setting, IPv6 flow label, SCTP, TCP congestion algorithm setting, sendfile / zerocopy, socket pacing, authentication, bind to device, support IPv4 don't fragment, POSIX threads\n"
+}

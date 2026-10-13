@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "source_baseline": "8c305fc",
+  "build_directory": "build/sfp_bridge",
+  "setup_slack_ns": 1.347,
+  "hold_slack_ns": 0.059,
+  "pulse_width_slack_ns": 3.5,
+  "unconstrained_internal_endpoints": 0,
+  "drc_errors": 0,
+  "drc_warnings": [
+    "PDRC-153: reused clock-input LUT",
+    "PLHOLDVIO-2: reused clock-input LUT"
+  ],
+  "hashes": {
+    "sfp_loopback/bridge_diagnostics.py": "0a80e2f60d5e73611f78ebdae7387a0dc40cf9cbb6504de5f32af491afbafb31",
+    "sfp_loopback/bridge.py": "2ab2bf529d7df01d6f39184ae7eb89f59cede6baa2b8e9cd409e246f91259d44",
+    "sfp_loopback/bridge_target.py": "531fb565ca49073a3756ce333a6b3228d3d41dbd8bf8e5a7e81c6591d1f464d8",
+    "build/sfp_bridge/gateware/dual_sfp_bridge.bit": "f7b293fc5d8fd5af0df426ec65890f34d02c757a43278bc2c9a11abf17860743",
+    "build/sfp_bridge/gateware/dual_sfp_bridge.bin": "d18e20d2088acd366ef81b584b6a44fdcdfbdd6543c3504bba02a6f523597e5d",
+    "build/sfp_bridge/gateware/dual_sfp_bridge_timing.rpt": "812e075c64392e9c766280e81c0287a96b0dfb41748df37550dad535cf60470e"
+  },
+  "dependencies": {
+    "litex": {
+      "url": "https://github.com/eastWillow/litex.git",
+      "commit": "b2759f69bcae8be0357fb2ee5eebe216365d1f00"
+    },
+    "litex-boards": {
+      "url": "https://github.com/eastWillow/litex-boards.git",
+      "commit": "c2abe2465dbe72de385a4c8b453ffb31c2d86bbb"
+    },
+    "liteeth": {
+      "url": "https://github.com/enjoy-digital/liteeth.git",
+      "commit": "c311f90f4b25b24be5bf3077e9ad37fcde6589a3"
+    },
+    "liteiclink": {
+      "url": "https://github.com/enjoy-digital/liteiclink.git",
+      "commit": "6e69216944e94c69f5a7d58d5c6d75dc3d754242"
+    },
+    "migen": {
+      "url": "https://github.com/m-labs/migen.git",
+      "commit": "e19524c963a8342952840983047557707fbe0b6a"
+    }
+  }
+}

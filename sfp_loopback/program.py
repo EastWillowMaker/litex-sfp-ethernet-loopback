@@ -8,6 +8,7 @@ import shutil
 import subprocess
 
 from sfp_loopback.cable_diagnostics import read_cable_status
+from sfp_loopback.bridge_diagnostics import read_bridge_status
 from sfp_loopback.diagnostics import BoundedUART, read_flash_id, read_status
 
 
@@ -28,12 +29,14 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=Path("build/sfp2"))
     parser.add_argument("--image-basename", default="sfp2_loopback",
                         help="Gateware image basename (default: sfp2_loopback)")
-    parser.add_argument("--status-profile", choices=("sfp2", "cable"), default="sfp2",
+    parser.add_argument("--status-profile", choices=("sfp2", "cable", "bridge"), default="sfp2",
                         help="UART status reader matching the loaded target")
     parser.add_argument("--port", default="/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0")
     parser.add_argument("--target", default="localhost:3121/xilinx_tcf/Digilent/210357A7D00EA")
     parser.add_argument("--report", type=Path, default=Path("artifacts/programming.json"))
     args = parser.parse_args()
+    if (args.status_profile == "bridge" or args.image_basename == "dual_sfp_bridge") and not args.load:
+        parser.error("The bridge target supports SRAM loading; use --load.")
     vivado = shutil.which("vivado")
     if vivado is None:
         parser.error("vivado must be on PATH")
@@ -67,7 +70,11 @@ def main():
         report["vivado_returncode"] = result.returncode
         if result.returncode == 0:
             with BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv")) as bus:
-                status_reader = read_status if args.status_profile == "sfp2" else read_cable_status
+                status_reader = {
+                    "sfp2": read_status,
+                    "cable": read_cable_status,
+                    "bridge": read_bridge_status,
+                }[args.status_profile]
                 report["status_after_boot"] = status_reader(bus)
             report["passed"] = True
     except (OSError, RuntimeError, ValueError, AttributeError) as error:

@@ -1,0 +1,47 @@
+{
+  "experiment": "CPU-free dual-SFP transparent IPv4/ARP bridge",
+  "baseline": "8c305fc",
+  "build": "PASS",
+  "compiled_real_mac_simulation": {
+    "status": "PASS",
+    "cases": 18
+  },
+  "physical_fixture": {
+    "status": "BLOCKED",
+    "reason": "Only one independent wired host NIC enumerates",
+    "required": "Two dedicated Gigabit host NICs, one per copper SFP"
+  },
+  "sram_load": "NOT RUN",
+  "gigabit_links": "NOT RUN",
+  "hardware_ipv4_100_each_direction": "NOT RUN",
+  "hardware_arp_ping": "NOT RUN",
+  "hardware_ipv6_drop_100_each_direction": "NOT RUN",
+  "hardware_crc_and_frame_integrity": "NOT RUN",
+  "iperf_both_directions": "BLOCKED",
+  "persistent_flash": "NOT RUN: bridge experiment is SRAM-only",
+  "performance_limit": "Single-frame buffering serializes receive/transmit; roughly200Mbps before overhead at50MHz8bit. No actual FPGA throughput measured.",
+  "preserved": "Existing RTL8211F cable target and qualified SPI image unchanged",
+  "next_action": "Connect second dedicated NIC; confirm concrete isolated interface plan before namespace setup; load bridge SRAM and run physical tests then restore.",
+  "software_regression": {
+    "status": "PASS",
+    "cases": 146,
+    "seconds": 134.86,
+    "command": ".venv/bin/python -m pytest tests -q"
+  },
+  "type_check": {
+    "status": "PASS",
+    "source_files": 17,
+    "command": ".venv/bin/python -m mypy --follow-imports skip --ignore-missing-imports --check-untyped-defs sfp_loopback scripts/bootstrap.py"
+  },
+  "review_fix_programming_regression": {
+    "status": "PASS",
+    "cases": 11,
+    "scope": "Bridge image SRAM restriction across all status profiles"
+  },
+  "review_fix_host_regression": {
+    "status": "PASS",
+    "cases": 30,
+    "scope": "Namespace inventory failures, fresh packet-capture artifacts, exclusive manifest claim and all earlier host safeguards"
+  },
+  "verification_note": "Full146-case suite passed before scoped review fixes; final30host and11programming cases plus prescribedmypy passed afterward. Gateware unchanged."
+}

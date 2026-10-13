@@ -1,10 +1,14 @@
 # Rise Pro Ethernet frame tests
 
-The latest test uses the board's RTL8211F RJ45 connection as the host port,
+The qualified cable-loop test uses the board's RTL8211F RJ45 connection as the host port,
 with an RJ45 cable directly joining two copper SFP modules in SFP1 and SFP2.
 The FPGA sends host test frames across that external cable and returns them
 through RTL8211F for exact host verification. Both SFP directions are tested
 separately. See [the cable-loop plan](docs/sfp-cross-port-test.md).
+
+A separate dual-SFP transparent IPv4/ARP bridge is implemented and has passed
+compiled MAC simulation and routed timing. Physical qualification requires two
+dedicated host NICs. See [the bridge test procedure](docs/dual-sfp-bridge-test.md).
 
 The original SFP2-only test remains available as the validated baseline below.
 
