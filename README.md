@@ -1,36 +1,51 @@
-# Rise Pro Ethernet frame tests
+# LiteX dual-SFP IPv6 filter for the Rise Pro
 
-The qualified cable-loop test uses the board's RTL8211F RJ45 connection as the host port,
-with an RJ45 cable directly joining two copper SFP modules in SFP1 and SFP2.
-The FPGA sends host test frames across that external cable and returns them
-through RTL8211F for exact host verification. Both SFP directions are tested
-separately. See [the cable-loop plan](docs/sfp-cross-port-test.md).
+This project builds a two-port, CPU-free Ethernet bridge for the EmbedFire
+Rise Pro XC7A35T FPGA. Place it between an ISP router LAN port and the
+Ethernet uplink of an access point to block native IPv6 while keeping an
+untagged IPv4 connection working:
 
-The separate dual-SFP transparent IPv4/ARP bridge now exceeds its 500 Mbps
-hardware target: **941.405 Mbps and 941.403 Mbps received TCP**, measured for
-30 seconds in each direction separately. Eight frame slots per direction
-and a 125 MHz datapath replace the earlier single-buffer bottleneck.
-Physical qualification also passed 100/100 unchanged IPv4 frames each way,
-ARP/ping, and zero forwarded IPv6 probes, with no new MAC errors or queue
-overflows. Adapter state and NetworkManager profiles were restored.
-The performance image is now programmed and verified in SPI flash for
-standalone operation. See [standalone deployment](docs/standalone-ipv6-filter.md),
-[the bridge test procedure](docs/dual-sfp-bridge-test.md)
-and [the measured results](docs/results/2026-10-14/bridge500/summary.json).
+```text
+ISP router LAN → printed SFP1 [FPGA] printed SFP2 → AP uplink → Wi-Fi clients
+```
 
-The original SFP2-only test remains available as the validated baseline below.
+The bridge forwards complete, untagged IPv4 and ARP frames in both directions
+without changing their Ethernet addresses. It drops native IPv6, VLAN-tagged
+frames, PPPoE, and other EtherTypes. Each direction has eight frame buffers;
+frames arriving while the queue is full are dropped. It does not filter IPv6
+traffic that stays within the Wi-Fi network or travels inside an IPv4 tunnel.
 
-This project tests an EmbedFire Rise Pro XC7A35T with a Dawnray SFP-GE-T
-copper module in SFP2. A USB Gigabit Ethernet adapter sends 1,000 Ethernet
-test frames and verifies the returned frames, with source/destination MAC
-addresses exchanged and the payload preserved.
+The qualified 125 MHz image measured **941.405 Mbps and 941.403 Mbps received
+TCP** in separate 30-second hardware runs. ARP/ping passed, 100/100 IPv4 test
+frames were delivered unchanged each way, and 0/100 IPv6 probes were
+forwarded each way. [Results and limits](docs/results/2026-10-14/bridge500/summary.json)
+record the two-adapter fixture; the ISP-router/AP installation has not yet
+been tested.
 
-The dedicated LiteX target uses onboard RAM, a 1000BASE-X PHY, and a UART
-Wishbone bridge for diagnostics. It builds no CPU firmware and needs no DDR3
-or IP addresses. The original LiteX-Boards clones remain unchanged; the
-target adds corrected onboard reference-clock and SPI chip-select resources.
+The image was written and verified in SPI flash. Two SPI boots passed and both
+SFP links came up afterward. The board needs its normal independent power
+supply and Ethernet cables for standalone operation; the laptop, JTAG
+programmer, and USB UART can be removed after programming. The NWA50AX access
+point needs its own adapter or a PoE injector on its side of the FPGA. A
+physical power-off/on boot check remains unverified. See the
+[standalone wiring and test guide](docs/standalone-ipv6-filter.md) and
+[SPI deployment evidence](docs/results/2026-10-14/bridge500-spi/summary.json).
 
-## Setup and build
+## Earlier Ethernet frame tests
+
+The following sections document the earlier SFP2-only and RTL8211F cable-loop
+targets. Their `--flash` commands replace the current bridge boot image.
+
+The cable-loop test uses the board's RTL8211F RJ45 connection as the host port,
+with a cable joining two copper SFP modules. The FPGA returns exact host test
+frames through RTL8211F to verify each SFP direction. See the
+[cable-loop plan](docs/sfp-cross-port-test.md).
+
+The original SFP2-only test uses a USB Gigabit Ethernet adapter and a
+Dawnray SFP-GE-T copper module. Its LiteX target has no CPU firmware, DDR3,
+or IP addresses; a UART Wishbone bridge provides diagnostics.
+
+### Setup and build
 
 Install Git, uv, and Vivado with Artix-7 support, then run from this directory:
 
@@ -44,7 +59,7 @@ Python 3.12 clock-domain naming; its older PyPI release does not. Vivado must
 be on PATH, or set `LITEX_ENV_VIVADO` to its settings script for building.
 Generated files are in `build/sfp2/`; the CSR map is `build/sfp2/csr.csv`.
 
-## Load, identify flash, and program
+### Load, identify flash, and program
 
 The defaults select the connected Digilent cable and CH340 serial port; use
 `--target` or `--port` if these differ on another machine.
@@ -68,7 +83,7 @@ To recheck boot from the existing flash image without programming it:
 .venv/bin/python -m sfp_loopback.program --boot --report artifacts/spi-boot.json
 ```
 
-## Cable test
+### Cable test
 
 Connect SFP2 through its copper module to the USB Ethernet adapter. Identify
 the adapter with `ip -br link`. LED0 is a clock heartbeat and LED1 indicates
@@ -114,7 +129,7 @@ If the USB adapter disappears, inspect the kernel journal and reconnect it.
 If carrier remains absent, check `lock`, `tx_ready`, `rx_ready`, `link` and
 `loss_of_signal` in the UART report before attempting the frame test.
 
-## Checks
+### Checks
 
 ```bash
 .venv/bin/python -m mypy --follow-imports skip --ignore-missing-imports \
@@ -134,7 +149,7 @@ hardware cable pass.
 See [the agreed design](docs/ethernet-loop-test.md) and
 [hardware evidence](docs/hardware-inventory.md) for wiring and test decisions.
 
-## RTL8211F and SFP cable-loop setup
+### RTL8211F and SFP cable-loop setup
 
 Connect the Host PC USB Ethernet adapter to the board's RTL8211F RJ45 port.
 Connect SFP1 and SFP2 through their copper modules with an RJ45 Ethernet cable.
