@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-14",
+  "status": "PASS: flash program/verify and two SPI boots",
+  "authorization": "User explicitly requested SPI flash for standalone ISP-router/AP deployment",
+  "replaced_boot_image": "qualified cable-loop image; rollback files retained",
+  "flash_jedec_id": "20ba18",
+  "flash_part": "mt25ql128-spi-x1_x2_x4",
+  "bridge_bit_sha256": "f9738f3425b08f1e43e3c566e87e3a7281807f33cc06ba8ea4cd4879a0e2025e",
+  "bridge_bin_sha256": "f56cfced165ae7cae0d1cc620a19c372125d5b4c56cc21859136766c0f514ec9",
+  "flash_offset": 0,
+  "program_verify_passed": true,
+  "first_spi_boot_passed": true,
+  "second_spi_boot_without_rewrite_passed": true,
+  "settled_links_up": [
+    "sfp0",
+    "sfp1"
+  ],
+  "cold_power_cycle": "Pending optional user check; not yet verified",
+  "laptop_required_for_forwarding": false,
+  "programmer_required_for_forwarding": false,
+  "usb_uart_required_for_forwarding": false,
+  "power_requirement": "Independent normal board power supply; AP separately powered or PoE injector downstream",
+  "tests": {
+    "programming_tests_passed": 17,
+    "mypy_source_files": 17,
+    "hosted_ci_run": false
+  },
+  "limitations": [
+    "No new post-flash controlled traffic/throughput qualification; exact previously qualified image reused",
+    "Native IPv6 blocked in both directions; IPv4/ARP only, no VLAN or PPPoE forwarding",
+    "Helper-map validator checks CSR names only; correct loaded-helper/map provenance is required",
+    "Programming passed flag does not assert links, forwarding or firmware identity",
+    "Startup MAC errors remain in cumulative snapshots; zero-since-boot errors not claimed",
+    "Real ISP router/NWA50AX deployment not yet tested"
+  ]
+}

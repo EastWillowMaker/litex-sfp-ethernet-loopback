@@ -32,9 +32,11 @@ CSR map to host tests and diagnostics; their defaults also refer to
   --csr-csv build/sfp_bridge500/csr.csv --output artifacts/bridge/status.json
 ```
 
-The bridge profile supports SRAM loading only. The qualified cable-loop SPI
-image remains the persistent boot image. Loading replaces the running image;
-a later power cycle returns to the existing SPI image.
+SRAM loading is temporary. The user subsequently authorized replacing the
+cable-loop SPI image with this qualified bridge for standalone deployment.
+The programming tool now supports bridge flash/boot with a separate helper
+CSR map for live flash identification. See [the standalone procedure](standalone-ipv6-filter.md)
+for commands, power connections, recovery images and deployment evidence.
 
 ## Physical fixture and host isolation
 
@@ -111,7 +113,9 @@ The 125 MHz routed build met timing (setup 0.685 ns, hold 0.055 ns), using
 16/50 block RAM tiles. All 171 repository tests and the 19-case real-MAC
 subset passed. Physical simultaneous bidirectional TCP was not measured;
 simulation covers simultaneous bursts. Hardware VLAN/malformed/bad-FCS
-injection, cold-power behavior and bridge SPI programming remain untested.
+injection and cold-power behavior were not part of that SRAM qualification.
+The subsequent SPI write/verify and boot checks are recorded in the
+[standalone deployment evidence](results/2026-10-14/bridge500-spi/summary.json).
 The queue remains bounded and may drop whole frames under sustained
 backpressure. See [the measured results](results/2026-10-14/bridge500/summary.json)
 and [the impact review](results/2026-10-14/bridge500/impact-review.md), including

@@ -1,0 +1,8 @@
+{
+  "artifacts/bridge500-spi/previous-cable/sfp_cable_loopback.bin": "faaeb896b7847280a151e8f2fd3b3c7e32253f75d7d0df2faae72c3165e9ad27",
+  "artifacts/bridge500-spi/previous-cable/sfp_cable_loopback.bit": "531d040579b812d2c04d74b0801ebdf74b465721db541e118798dfc90e0d2cfa",
+  "artifacts/bridge500-spi/previous-cable/csr.csv": "4e5dfec37fd6662763e6530097027a5174f41dd833757f7e2b02bd19bb1c42c1",
+  "artifacts/bridge500-spi/bridge500/dual_sfp_bridge.bin": "f56cfced165ae7cae0d1cc620a19c372125d5b4c56cc21859136766c0f514ec9",
+  "artifacts/bridge500-spi/bridge500/dual_sfp_bridge.bit": "f9738f3425b08f1e43e3c566e87e3a7281807f33cc06ba8ea4cd4879a0e2025e",
+  "artifacts/bridge500-spi/bridge500/csr.csv": "a02dda0096679a3ced9582936022b11c37e53c3f8df328cf6b17dfcfb220aadf"
+}

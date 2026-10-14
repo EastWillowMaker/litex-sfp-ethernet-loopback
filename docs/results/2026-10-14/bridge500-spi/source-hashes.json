@@ -1,0 +1,7 @@
+{
+  "sfp_loopback/program.py": "4118d9d4338d99ece41b17858115817b77e99f521106a9bcdf174cad0004b21e",
+  "flash_invocation_program_py_sha256": "ba4c07c4359ac3d49f3c2e6979a4845f3bece480b8eb73ee278384771247a0ad",
+  "flash_invocation_difference": "One validator docstring clarified after invocation; executable code unchanged. Repeat boot used current source.",
+  "scripts/program.tcl": "5516a246686fd4c75f0dc805e240424b640e411d42648acecf92f19ca26b634f",
+  "tests/test_programming.py": "24334eefdf22511dd05f3e8ce43bb1696233bfb4b45575e8d90fd0da4e3cc118"
+}

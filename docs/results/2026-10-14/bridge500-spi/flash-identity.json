@@ -1,0 +1,4 @@
+{
+  "flash_jedec_id": "20ba18",
+  "helper_csr_csv": "build/sfp_cable/csr.csv"
+}

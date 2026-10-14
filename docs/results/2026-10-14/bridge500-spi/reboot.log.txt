@@ -1,0 +1,97 @@
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Wed Oct 14 22:27:50 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source /home/eastwillow/Documents/litex-network-router/scripts/program.tcl
+# proc run {} {
+#     global argv
+#     lassign $argv operation image target flash_part
+#     open_hw_manager
+#     connect_hw_server -url localhost:3121
+#     open_hw_target $target
+#     set devices [get_hw_devices xc7a35t_0]
+#     if {[llength $devices] != 1} {error "Expected exactly one XC7A35T"}
+#     set dev [lindex $devices 0]
+#     current_hw_device $dev
+#     refresh_hw_device $dev
+#     if {$operation eq "load"} {
+#         set_property PROGRAM.FILE $image $dev
+#         program_hw_devices $dev
+#     } elseif {$operation eq "flash"} {
+#         set parts [get_cfgmem_parts $flash_part]
+#         puts "FLASH_PART_REQUEST=$flash_part MATCHES=[llength $parts] PARTS=$parts"
+#         if {[llength $parts] == 0} {error "Unrecognized configuration-memory part"}
+#         # Vivado 2025.2 can return multiple identical database entries.
+#         foreach name [get_property NAME $parts] {
+#             if {$name ne $flash_part} {error "Ambiguous configuration-memory part"}
+#         }
+#         create_hw_cfgmem -hw_device $dev -mem_dev [lindex $parts 0]
+#         set mem [get_property PROGRAM.HW_CFGMEM $dev]
+#         set_property PROGRAM.ADDRESS_RANGE use_file $mem
+#         set_property PROGRAM.BIN_OFFSET 0 $mem
+#         set_property PROGRAM.FILES [list $image] $mem
+#         set_property PROGRAM.UNUSED_PIN_TERMINATION pull-none $mem
+#         set_property PROGRAM.BLANK_CHECK 0 $mem
+#         set_property PROGRAM.ERASE 1 $mem
+#         set_property PROGRAM.CFG_PROGRAM 1 $mem
+#         set_property PROGRAM.VERIFY 1 $mem
+#         create_hw_bitstream -hw_device $dev [get_property PROGRAM.HW_CFGMEM_BITFILE $dev]
+#         program_hw_devices $dev
+#         program_hw_cfgmem $mem
+#         boot_hw_device -timeout 30 $dev
+#     } elseif {$operation eq "boot"} {
+#         boot_hw_device -timeout 30 $dev
+#     } else {
+#         error "Unknown programming operation"
+#     }
+#     refresh_hw_device $dev
+#     # Vivado 2025.2 returns an empty string from boot_hw_device even on success.
+#     # Confirm hardware state rather than relying on its documented return value.
+#     if {[get_property REGISTER.CONFIG_STATUS.BIT14_DONE_PIN $dev] != 1} {
+#         error "Configuration did not assert DONE"
+#     }
+#     if {[get_property REGISTER.CONFIG_STATUS.BIT00_CRC_ERROR $dev] != 0} {
+#         error "Configuration CRC error"
+#     }
+#     puts "CONFIGURATION_STATUS: [get_property REGISTER.CONFIG_STATUS $dev]"
+#     close_hw_manager
+# }
+# if {[catch {run} message]} {
+#     puts stderr "Programming failed: $message"
+#     exit 1
+# }
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+****** Xilinx hw_server v2025.2
+  **** Build date : Oct 28 2025 at 16:07:00
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+
+
+INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
+INFO: [Labtools 27-3417] Launching cs_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+
+******** Xilinx cs_server v2025.2.0
+  ****** Build date   : Nov 14 2025-07:16:52
+    **** Build number : 2025.2.1763075812
+      ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
+      ** Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+
+
+
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210357A7D00EA
+INFO: [Labtools 27-1434] Device xc7a35t (JTAG device index = 0) is programmed with a design that has no supported soft debug core(s) in it.
+INFO: [Labtoolstcl 44-664] Will wait up to 30 seconds for booting to complete.
+INFO: [Labtools 27-32] Done pin status: HIGH
+INFO: [Labtools 27-1434] Device xc7a35t (JTAG device index = 0) is programmed with a design that has no supported soft debug core(s) in it.
+CONFIGURATION_STATUS: 01010000000100000111100111111100
+# exit 0
+INFO: [Common 17-206] Exiting Vivado at Wed Oct 14 22:27:57 2026...

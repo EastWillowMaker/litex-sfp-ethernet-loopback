@@ -1,0 +1,67 @@
+{
+  "operation": "flash",
+  "image": "/home/eastwillow/Documents/litex-network-router/build/sfp_bridge500/gateware/dual_sfp_bridge.bin",
+  "target": "localhost:3121/xilinx_tcf/Digilent/210357A7D00EA",
+  "passed": true,
+  "flash_id_csr_csv": "/home/eastwillow/Documents/litex-network-router/build/sfp_cable/csr.csv",
+  "flash_jedec_id": "20ba18",
+  "flash_part": "mt25ql128-spi-x1_x2_x4",
+  "image_sha256": "f56cfced165ae7cae0d1cc620a19c372125d5b4c56cc21859136766c0f514ec9",
+  "vivado_returncode": 0,
+  "status_after_boot": {
+    "links": {
+      "sfp0": {
+        "link_up": 0,
+        "qpll_locked": 1,
+        "tx_ready": 1,
+        "rx_ready": 0,
+        "loss_of_signal": 1,
+        "control_tx_disable": 0
+      },
+      "sfp1": {
+        "link_up": 0,
+        "qpll_locked": 1,
+        "tx_ready": 1,
+        "rx_ready": 1,
+        "loss_of_signal": 1,
+        "control_tx_disable": 0
+      }
+    },
+    "mac_rx": {
+      "sfp0": {
+        "preamble_errors": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      "sfp1": {
+        "preamble_errors": 695057,
+        "crc_errors": 4471,
+        "drops": 0
+      }
+    },
+    "forwarding": {
+      "sfp0_to_sfp1": {
+        "rx_frames": 0,
+        "tx_frames": 0,
+        "ipv4_frames": 0,
+        "arp_frames": 0,
+        "rejected_frames": 0,
+        "error_frames": 0,
+        "overflow_frames": 0,
+        "ipv6_drops": 0,
+        "unsupported_drops": 0
+      },
+      "sfp1_to_sfp0": {
+        "rx_frames": 0,
+        "tx_frames": 0,
+        "ipv4_frames": 0,
+        "arp_frames": 0,
+        "rejected_frames": 2660,
+        "error_frames": 2675,
+        "overflow_frames": 0,
+        "ipv6_drops": 0,
+        "unsupported_drops": 0
+      }
+    }
+  }
+}

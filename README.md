@@ -13,8 +13,9 @@ and a 125 MHz datapath replace the earlier single-buffer bottleneck.
 Physical qualification also passed 100/100 unchanged IPv4 frames each way,
 ARP/ping, and zero forwarded IPv6 probes, with no new MAC errors or queue
 overflows. Adapter state and NetworkManager profiles were restored.
-The performance image is loaded in SRAM; the cable-loop SPI image remains
-the boot image. See [the bridge test procedure](docs/dual-sfp-bridge-test.md)
+The performance image is now programmed and verified in SPI flash for
+standalone operation. See [standalone deployment](docs/standalone-ipv6-filter.md),
+[the bridge test procedure](docs/dual-sfp-bridge-test.md)
 and [the measured results](docs/results/2026-10-14/bridge500/summary.json).
 
 The original SFP2-only test remains available as the validated baseline below.

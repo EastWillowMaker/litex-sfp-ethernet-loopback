@@ -1,6 +1,7 @@
-"""Load or flash the generated SFP2 image using the connected Digilent cable."""
+"""Load, flash, or boot a generated image using the connected Digilent cable."""
 
 import argparse
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -18,6 +19,35 @@ FLASH_PARTS = {
     "20bb18": "mt25ql128-spi-x1_x2_x4",
     "ef4018": "w25q128jvq-spi-x1_x2_x4",
 }
+FLASH_ID_CSR_NAMES = (
+    "spiflash_spi_cs",
+    "spiflash_spi_mosi",
+    "spiflash_spi_control",
+    "spiflash_spi_status",
+    "spiflash_spi_miso",
+)
+
+
+def validate_flash_id_csr_csv(path: Path) -> None:
+    """Require SPI registers for the read-only JEDEC command before UART access."""
+    if not path.is_file():
+        raise ValueError(
+            f"SPI flash identity CSR map not found: {path}; "
+            "pass --flash-id-csr-csv with a map from an image that exposes SPI CSRs."
+        )
+    with path.open(newline="", encoding="utf-8") as stream:
+        names = {
+            row[1]
+            for row in csv.reader(stream)
+            if len(row) > 1 and row[0] == "csr_register"
+        }
+    missing = [name for name in FLASH_ID_CSR_NAMES if name not in names]
+    if missing:
+        raise ValueError(
+            f"SPI flash identity CSR map {path} is missing required registers: "
+            f"{', '.join(missing)}; the bridge image has no SPI CSRs, so pass "
+            "--flash-id-csr-csv from a separately loaded helper image."
+        )
 
 
 def main():
@@ -31,12 +61,16 @@ def main():
                         help="Gateware image basename (default: sfp2_loopback)")
     parser.add_argument("--status-profile", choices=("sfp2", "cable", "bridge"), default="sfp2",
                         help="UART status reader matching the loaded target")
+    parser.add_argument("--flash-id-csr-csv", type=Path,
+                        help="CSR map for the currently loaded image's SPI flash ID reader (flash only)")
     parser.add_argument("--port", default="/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0")
     parser.add_argument("--target", default="localhost:3121/xilinx_tcf/Digilent/210357A7D00EA")
     parser.add_argument("--report", type=Path, default=Path("artifacts/programming.json"))
     args = parser.parse_args()
-    if (args.status_profile == "bridge" or args.image_basename == "dual_sfp_bridge") and not args.load:
-        parser.error("The bridge target supports SRAM loading; use --load.")
+    if args.image_basename == "dual_sfp_bridge" and args.status_profile != "bridge":
+        parser.error("The dual_sfp_bridge image requires --status-profile bridge.")
+    if args.flash_id_csr_csv is not None and not args.flash:
+        parser.error("--flash-id-csr-csv is only valid with --flash.")
     vivado = shutil.which("vivado")
     if vivado is None:
         parser.error("vivado must be on PATH")
@@ -53,7 +87,10 @@ def main():
     try:
         flash_part = ""
         if args.flash:
-            with BoundedUART(args.port, csr_csv=str(args.output_dir / "csr.csv")) as bus:
+            flash_id_csr_csv = args.flash_id_csr_csv or (args.output_dir / "csr.csv")
+            validate_flash_id_csr_csv(flash_id_csr_csv)
+            report["flash_id_csr_csv"] = str(flash_id_csr_csv.resolve())
+            with BoundedUART(args.port, csr_csv=str(flash_id_csr_csv)) as bus:
                 flash_id = read_flash_id(bus)
             report["flash_jedec_id"] = flash_id
             if flash_id not in FLASH_PARTS:
