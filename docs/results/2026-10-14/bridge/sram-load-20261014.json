@@ -1,0 +1,64 @@
+{
+  "operation": "load",
+  "image": "/home/eastwillow/Documents/litex-network-router/build/sfp_bridge/gateware/dual_sfp_bridge.bit",
+  "target": "localhost:3121/xilinx_tcf/Digilent/210357A7D00EA",
+  "passed": true,
+  "image_sha256": "f7b293fc5d8fd5af0df426ec65890f34d02c757a43278bc2c9a11abf17860743",
+  "vivado_returncode": 0,
+  "status_after_boot": {
+    "links": {
+      "sfp0": {
+        "link_up": 0,
+        "qpll_locked": 1,
+        "tx_ready": 1,
+        "rx_ready": 1,
+        "loss_of_signal": 1,
+        "control_tx_disable": 0
+      },
+      "sfp1": {
+        "link_up": 0,
+        "qpll_locked": 1,
+        "tx_ready": 1,
+        "rx_ready": 1,
+        "loss_of_signal": 1,
+        "control_tx_disable": 0
+      }
+    },
+    "mac_rx": {
+      "sfp0": {
+        "preamble_errors": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      "sfp1": {
+        "preamble_errors": 180126,
+        "crc_errors": 33,
+        "drops": 0
+      }
+    },
+    "forwarding": {
+      "sfp0_to_sfp1": {
+        "rx_frames": 0,
+        "tx_frames": 0,
+        "ipv4_frames": 0,
+        "arp_frames": 0,
+        "rejected_frames": 0,
+        "error_frames": 0,
+        "overflow_frames": 0,
+        "ipv6_drops": 0,
+        "unsupported_drops": 0
+      },
+      "sfp1_to_sfp0": {
+        "rx_frames": 0,
+        "tx_frames": 0,
+        "ipv4_frames": 0,
+        "arp_frames": 0,
+        "rejected_frames": 38,
+        "error_frames": 38,
+        "overflow_frames": 0,
+        "ipv6_drops": 0,
+        "unsupported_drops": 0
+      }
+    }
+  }
+}

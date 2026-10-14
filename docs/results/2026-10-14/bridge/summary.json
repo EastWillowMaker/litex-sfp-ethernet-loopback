@@ -1,0 +1,39 @@
+{
+  "experiment": "CPU-free dual-SFP transparent IPv4/ARP bridge",
+  "status": "PASS for the documented physical fixture",
+  "implementation_baseline": "7d3ef99",
+  "gateware_unchanged": true,
+  "image_sha256": "f7b293fc5d8fd5af0df426ec65890f34d02c757a43278bc2c9a11abf17860743",
+  "temporary_sram_load": "PASS",
+  "links": "PASS: two independent RTL8153 NICs at1000Mbps, both FPGA PCS links up",
+  "fixture": {
+    "sfp0": "enx98fc84e0c4e8 / 98:fc:84:e0:c4:e8",
+    "sfp1": "enx00e04c5828c8 / 00:e0:4c:58:28:c8",
+    "mapping_evidence": "Directional UART increments during probes, not assumed from cable-swap wording"
+  },
+  "arp_and_ping": "PASS both directions",
+  "ipv4": "PASS100/100 unchanged each direction",
+  "ipv6": "PASS0/100 forwarded each direction; at least100 hardware drops each",
+  "correctness_mac_errors_and_overflows": "PASS: zero test-time deltas",
+  "tcp_throughput_mbps": {
+    "left_to_right": 0.734,
+    "right_to_left": 0.734
+  },
+  "performance_target_500_mbps": "NOT ACHIEVED; measurement completed, no minimum functional gate in the specification",
+  "restoration": "PASS in the final cleanup-only verification, both original NetworkManager profiles requested and verified",
+  "evidence_sequence": "Exact-client traffic qualification passed before the final cleanup-only IPv6 add-to-append fix. Final client cleanup was separately verified with saved source hashes; forwarding/traffic code and gateware unchanged. Earlier failed mapping/cleanup reports retained.",
+  "software_checks": "41 focused host/diagnostics cases and prescribedmypy17files PASS; earlier146 full-suite and real-MAC18cases retained",
+  "unverified": [
+    "Hardware VLAN/QinQ/malformed injection (covered in simulation only)",
+    "Complex/nonempty link-local route flags",
+    "Standalone CLI restoration of an externally disconnected active NM profile without the documented operator reactivation step",
+    "Hosted CI",
+    "Cold power cycle",
+    "Bridge persistent flash (SRAM-only)"
+  ],
+  "known_limitations": [
+    "Single-frame buffering drops TCP bursts; measured throughput approximately0.734Mbps each direction, far below500Mbps target",
+    "Route flags are not compared/replayed; see impact-review.md trigger/consequence/follow-up"
+  ],
+  "next_action": "For higher throughput, evaluate additional complete-frame buffering; keep the verified correctness criteria."
+}

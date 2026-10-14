@@ -1,0 +1,39 @@
+{
+  "completed": true,
+  "restoration": {
+    "namespaces": {
+      "restored": true,
+      "errors": []
+    },
+    "enx98fc84e0c4e8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "managed_restored": true,
+      "connection_restored": true
+    },
+    "enx00e04c5828c8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "managed_restored": true,
+      "connection_restored": true
+    }
+  },
+  "error": null,
+  "test_overall": "NOT RUN: cleanup diagnosis only"
+}

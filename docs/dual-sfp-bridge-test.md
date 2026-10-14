@@ -41,7 +41,8 @@ not use the board RTL8211F RJ45 port. Inspect before changing anything:
 
 Setup requires explicit operator confirmation that the named NICs are dedicated
 and may be moved. Never select a management, default-route or SSH interface.
-The tool checks physical identity and network use, records initial settings,
+Setup accepts only NICs without an active NetworkManager connection or
+non-link-local configuration. The tool checks physical identity and network use, records initial settings,
 and creates two owned namespaces with 10.77.0.1/24 and 10.77.0.2/24.
 It does not create a Linux bridge between them. Replace LEFT and RIGHT with
 reviewed interface names, then run only after that confirmation:
@@ -58,7 +59,12 @@ sudo .venv/bin/python -m sfp_loopback.bridge_host restore \
 ```
 
 Run restore after success or failure. Keep the state file until restoration is
-verified. Setup rolls back its owned resources when an intermediate step fails.
+verified. Restore returns namespace-owned NICs, MTU/up state, link-local
+addresses/routes and NetworkManager management. If an operator first disconnected
+an active NetworkManager profile to satisfy setup, record and reactivate that
+profile on its original NIC afterward; standalone restore does not do that
+external step. The physical validation harness records and checks those profiles.
+Complex link-local route flags remain outside the validated restoration fixture. Setup rolls back its owned resources when an intermediate step fails.
 The manifest and reports record restoration errors instead of hiding them.
 
 The test captures destination-side PCAPs, checks ARP and ping in both directions,
@@ -84,5 +90,8 @@ host loopback benchmarks do not establish FPGA performance.
 The routed build passed setup/hold timing with 1.347/0.059 ns slack and no
 unconstrained internal endpoints. DRC reports two warnings for the reused
 clock-input LUT, with no errors. Real-MAC compiled simulation passed 18 cases,
-including bad-FCS rejection and recovery. Hardware protocol and throughput
-qualification remain blocked by the missing second physical host NIC.
+including bad-FCS rejection and recovery. Physical IPv4/ARP/IPv6 qualification now passes with two RTL8153 adapters.
+The saved exact-client run measured 0.734 Mbps TCP in both directions;
+500 Mbps was not achieved. A separate final cleanup-only run restored both
+NICs and original NetworkManager profiles without reported errors. See
+[the dated results and impact review](results/2026-10-14/bridge/summary.json).

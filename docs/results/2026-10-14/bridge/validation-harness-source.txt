@@ -1,0 +1,78 @@
+"""Run the confirmed two-NIC bridge test and restore adapter management."""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+project = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project))
+os.chdir(project)
+from sfp_loopback import bridge_host as b
+run_dir = project / 'artifacts/bridge/physical-20261014-cleanup-verified'
+run_dir.mkdir(parents=True, exist_ok=True)
+class TracingRunner(b.SystemRunner):
+    def run(self, argv, **kwargs):
+        try:
+            result = super().run(argv, **kwargs)
+            if 'route' in argv or 'address' in argv:
+                with (run_dir/'network-command-trace.jsonl').open('a') as log:
+                    log.write(json.dumps({'argv':list(argv),'returncode':result.returncode,'stdout':result.stdout,'stderr':result.stderr})+'\n')
+            return result
+        except BaseException as error:
+            with (run_dir/'command-errors.jsonl').open('a') as log:
+                log.write(json.dumps({'argv':list(argv),'error':str(error),'stderr':getattr(error,'stderr',None)})+'\n')
+            raise
+runner = TracingRunner()
+import hashlib
+(run_dir/'client-provenance.json').write_text(json.dumps({'bridge_host_sha256':hashlib.sha256((project/'sfp_loopback/bridge_host.py').read_bytes()).hexdigest(),'validation_harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},indent=2)+'\n')
+interfaces = {'enx98fc84e0c4e8': '98:fc:84:e0:c4:e8', 'enx00e04c5828c8': '00:e0:4c:58:28:c8'}
+state_path = run_dir / 'host-state.json'
+receipt = {'completed': False, 'restoration': {}, 'error': None}
+initial = {}
+state = None
+try:
+    inventory = b.inspect_host(runner, iperf3_path=str(project/'artifacts/bridge/iperf3'))
+    for name, mac in interfaces.items():
+        item = inventory['physical_interfaces'][name]
+        if item['mac'] != mac or not item['carrier'] or item['speed_mbps'] != 1000:
+            raise RuntimeError(f'{name}: expected adapter identity and 1 Gbps carrier required')
+        if name in inventory['default_route_interfaces'] or name in inventory['ssh_route_interfaces']:
+            raise RuntimeError(f'{name}: management interface must not be modified')
+        initial[name] = b._nm_state(runner, name)
+    (run_dir/'initial-management.json').write_text(json.dumps(initial,indent=2)+'\n')
+    for name in interfaces:
+        runner.run(['nmcli','device','set',name,'managed','no'], timeout=10)
+    time.sleep(1)
+    state = b.setup_pair('enx98fc84e0c4e8','enx00e04c5828c8',state_path=state_path,confirm_isolation=True,runner=runner)
+    if (len(sys.argv) > 1 and sys.argv[1] == 'cleanup') or (project/'artifacts/bridge/cleanup-only.txt').exists():
+        receipt['test_overall'] = 'NOT RUN: cleanup diagnosis only'
+    else:
+        report = b.run_bridge_test(state, output_dir=run_dir/'tests', runner=runner,
+            iperf3_path=str(project/'artifacts/bridge/iperf3'))
+        receipt['test_overall'] = report['overall']
+    receipt['completed'] = True
+except BaseException as error:
+    receipt['error'] = f'{type(error).__name__}: {error}'
+    print(receipt['error'], flush=True)
+finally:
+    if state is not None:
+        try:
+            restored = b.restore_state(state,state_path=state_path,runner=runner)
+            receipt['restoration']['namespaces'] = {'restored':restored['restored'],'errors':restored['restore_errors']}
+        except BaseException as error:
+            receipt['restoration']['namespaces'] = {'error':str(error)}
+    baseline_path = project / 'artifacts/bridge/physical-20261014/initial-management.json'
+    restore_management = json.loads(baseline_path.read_text()) if baseline_path.exists() else initial
+    for name, saved in restore_management.items():
+        if saved['managed'] is not None:
+            try:
+                runner.run(['nmcli','device','set',name,'managed','yes' if saved['managed'] else 'no'], timeout=10)
+                if saved['managed'] and saved.get('connection'):
+                    runner.run(['nmcli','--wait','0','connection','up','id',saved['connection'],'ifname',name],timeout=10)
+                    time.sleep(1)
+                current = b._nm_state(runner,name)
+                receipt['restoration'][name] = {'saved':saved,'current':current,'managed_restored':current['managed']==saved['managed'], 'connection_restored':current['connection']==saved['connection']}
+            except BaseException as error:
+                receipt['restoration'][name] = {'error':str(error)}
+    (run_dir/'completion.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    print(json.dumps(receipt,indent=2),flush=True)

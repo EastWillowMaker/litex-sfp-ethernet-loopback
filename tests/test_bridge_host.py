@@ -592,17 +592,30 @@ class NamespaceModelRunner:
         fail_on_second_nic_move=True,
         fail_namespace_link_query_at=None,
         fail_namespace_list=False,
+        omit_dev_on_filtered_routes=False,
+        recreate_link_local_routes_on_return=False,
+        link_local_noprefixroute=False,
+        link_local_route_metric=256,
+        link_local_route_pref="medium",
+        omit_pref_on_filtered_routes=False,
+        route_add_failure_mode=None,
     ):
         self.commands = []
-        self.root = {
-            name: {
+        self.root = {}
+        for name in ("left0", "right0"):
+            address = {
+                "local": f"fe80::{'1' if name == 'left0' else '2'}",
+                "prefixlen": 64,
+                "scope": "link",
+            }
+            if link_local_noprefixroute:
+                address["noprefixroute"] = True
+            self.root[name] = {
                 "up": True,
                 "mtu": 1600,
                 "mac": f"02:00:00:00:00:{'01' if name == 'left0' else '02'}",
-                "addresses": [{"local": f"fe80::{'1' if name == 'left0' else '2'}", "prefixlen": 64, "scope": "link"}],
+                "addresses": [address],
             }
-            for name in ("left0", "right0")
-        }
         self.namespaces = {}
         self.managed = {"left0": True, "right0": True}
         self.collide_on_second_namespace = collide_on_second_namespace
@@ -610,18 +623,25 @@ class NamespaceModelRunner:
         self.fail_namespace_link_query_at = fail_namespace_link_query_at
         self.namespace_link_queries = 0
         self.fail_namespace_list = fail_namespace_list
+        self.omit_dev_on_filtered_routes = omit_dev_on_filtered_routes
         self.namespace_adds = 0
-        self.routes = [
-            {
+        self.routes = []
+        for name in ("left0", "right0"):
+            route = {
                 "dst": "fe80::/64",
                 "dev": name,
                 "protocol": "kernel",
-                "metric": 256,
+                "metric": link_local_route_metric,
                 "scope": "link",
                 "table": "main",
             }
-            for name in ("left0", "right0")
-        ]
+            if link_local_route_pref is not None:
+                route["pref"] = link_local_route_pref
+            self.routes.append(route)
+        self.saved_link_local_routes = [dict(route) for route in self.routes]
+        self.recreate_link_local_routes_on_return = recreate_link_local_routes_on_return
+        self.omit_pref_on_filtered_routes = omit_pref_on_filtered_routes
+        self.route_add_failure_mode = route_add_failure_mode
         self.ssh_route_device = None
 
     def run(self, argv, *, check=True, timeout=30):
@@ -668,6 +688,16 @@ class NamespaceModelRunner:
                 ]
             if "dev" in command:
                 route_list = [route for route in route_list if route.get("dev") == command[-1]]
+                if self.omit_dev_on_filtered_routes:
+                    route_list = [
+                        {key: value for key, value in route.items() if key != "dev"}
+                        for route in route_list
+                    ]
+                if self.omit_pref_on_filtered_routes:
+                    route_list = [
+                        {key: value for key, value in route.items() if key != "pref"}
+                        for route in route_list
+                    ]
             return subprocess.CompletedProcess(command, 0, json.dumps(route_list), "")
         if command[:3] == ["ip", "route", "get"]:
             return subprocess.CompletedProcess(command, 0, "[]", "")
@@ -715,28 +745,72 @@ class NamespaceModelRunner:
             if interface not in self.root:
                 return subprocess.CompletedProcess(command, 1, "", "missing interface")
             return subprocess.CompletedProcess(command, 0, json.dumps([self._address(interface, self.root[interface])]), "")
-        if command[:2] == ["ip", "-6"] and command[2:4] == ["route", "add"]:
+        if command[:2] == ["ip", "-6"] and command[2:4] in (["route", "add"], ["route", "append"]):
+            operation = command[3]
             destination = command[4]
             interface = command[command.index("dev") + 1]
             metric = int(command[command.index("metric") + 1]) if "metric" in command else None
             protocol = command[command.index("proto") + 1] if "proto" in command else "static"
-            self.routes.append(
-                {
-                    "dst": destination,
-                    "dev": interface,
-                    "metric": metric,
-                    "protocol": protocol,
-                    "scope": "link" if "scope" in command else None,
-                    "table": "main",
-                }
-            )
+            route = {
+                "dst": destination,
+                "dev": interface,
+                "metric": metric,
+                "protocol": protocol,
+                "scope": "link" if "scope" in command else None,
+                "table": "main",
+            }
+            if "pref" in command:
+                route["pref"] = command[command.index("pref") + 1]
+            if operation == "add" and any(
+                existing.get("dst") == destination
+                and existing.get("metric") == metric
+                and existing.get("table", "main") == route["table"]
+                and existing.get("dev") != interface
+                for existing in self.routes
+            ):
+                raise subprocess.CalledProcessError(
+                    2,
+                    command,
+                    stderr="RTNETLINK answers: File exists",
+                )
+            if self.route_add_failure_mode is not None:
+                mode = self.route_add_failure_mode
+                self.route_add_failure_mode = None
+                raced_route = dict(route)
+                if mode == "different_metric_exists":
+                    raced_route["metric"] = 256
+                self.routes.append(raced_route)
+                raise subprocess.CalledProcessError(
+                    2,
+                    command,
+                    stderr="RTNETLINK answers: File exists",
+                )
+            self.routes.append(route)
             return subprocess.CompletedProcess(command, 0, "", "")
         if command[:2] == ["ip", "-6"] and command[2:4] == ["address", "add"]:
             address, interface = command[4], command[6]
             local, prefix = address.split("/")
-            self.root[interface]["addresses"].append(
-                {"local": local, "prefixlen": int(prefix), "scope": "link"}
-            )
+            noprefixroute = "noprefixroute" in command
+            restored_address = {
+                "local": local,
+                "prefixlen": int(prefix),
+                "scope": "link",
+            }
+            if noprefixroute:
+                restored_address["noprefixroute"] = True
+            self.root[interface]["addresses"].append(restored_address)
+            if not noprefixroute:
+                self.routes.append(
+                    {
+                        "dst": "fe80::/64",
+                        "dev": interface,
+                        "protocol": "kernel",
+                        "metric": 256,
+                        "scope": "link",
+                        "table": "main",
+                        "pref": "medium",
+                    }
+                )
             return subprocess.CompletedProcess(command, 0, "", "")
         if command[:2] == ["ip", "-n"]:
             namespace = command[2]
@@ -748,6 +822,12 @@ class NamespaceModelRunner:
                 if rest[4:6] == ["netns", "1"]:
                     item = self.namespaces[namespace].pop(interface)
                     self.root[interface] = item
+                    if self.recreate_link_local_routes_on_return:
+                        self.routes.extend(
+                            dict(route)
+                            for route in self.saved_link_local_routes
+                            if route.get("dev") == interface
+                        )
                 elif rest[4] == "mtu":
                     self.namespaces[namespace][interface]["mtu"] = int(rest[5])
                 elif rest[4] in ("up", "down"):
@@ -861,6 +941,467 @@ def test_setup_restore_recreates_saved_link_local_addresses_and_routes(tmp_path)
     assert {name: item["addresses"] for name, item in runner.root.items()} == original_addresses
     assert runner.routes == original_routes
     assert runner.managed == {"left0": True, "right0": True}
+
+
+def test_restore_recognizes_link_local_route_from_device_filtered_json_without_dev(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        recreate_link_local_routes_on_return=True,
+        link_local_noprefixroute=True,
+    )
+    state_path = tmp_path / "state.json"
+    original_routes = list(runner.routes)
+
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is True
+    assert restored["restore_errors"] == []
+    assert runner.routes == original_routes
+
+
+def test_restore_preserves_link_local_noprefixroute_and_saved_metric(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+    )
+    state_path = tmp_path / "state.json"
+    original_routes = list(runner.routes)
+
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is True
+    assert restored["restore_errors"] == []
+    assert runner.routes == original_routes
+    for interface, item in runner.root.items():
+        assert item["addresses"] == [
+            {
+                "local": "fe80::1" if interface == "left0" else "fe80::2",
+                "prefixlen": 64,
+                "scope": "link",
+                "noprefixroute": True,
+            }
+        ]
+
+
+def test_restore_appends_ipv6_route_when_same_prefix_exists_on_other_device(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+    )
+    unrelated_route = {
+        "dst": "fe80::/64",
+        "dev": "uplink0",
+        "protocol": "kernel",
+        "metric": 1024,
+        "scope": "link",
+        "table": "main",
+        "pref": "medium",
+    }
+    runner.routes.append(unrelated_route)
+    state_path = tmp_path / "state.json"
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is True
+    assert restored["restore_errors"] == []
+    assert unrelated_route in runner.routes
+    assert {route.get("dev") for route in runner.routes if route.get("dst") == "fe80::/64"} == {
+        "left0",
+        "right0",
+        "uplink0",
+    }
+    assert all(
+        command[:4] == ["ip", "-6", "route", "append"]
+        for command in runner.commands
+        if command[:3] == ["ip", "-6", "route"] and "dev" in command
+    )
+
+
+def test_restore_keeps_link_local_route_metric_conflict_visible(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        recreate_link_local_routes_on_return=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+    )
+    state_path = tmp_path / "state.json"
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+    runner.saved_link_local_routes = [
+        {**route, "metric": 256} if route["dev"] == "left0" else route
+        for route in runner.saved_link_local_routes
+    ]
+    runner.commands.clear()
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is False
+    assert any("link-local route fe80::/64 conflicts" in error for error in restored["restore_errors"])
+    assert any(
+        route.get("dev") == "left0" and route.get("metric") == 256
+        for route in runner.routes
+    )
+    assert not any(
+        command[:4] == ["ip", "-6", "route", "append"]
+        and "left0" in command
+        for command in runner.commands
+    )
+
+
+@pytest.mark.parametrize(
+    ("failure_mode", "restored_ok"),
+    [("same_route_exists", True), ("different_metric_exists", False)],
+)
+def test_restore_verifies_exact_route_after_add_error(tmp_path, failure_mode, restored_ok):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+    )
+    state_path = tmp_path / "state.json"
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+    runner.route_add_failure_mode = failure_mode
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is restored_ok
+    if restored_ok:
+        assert restored["restore_errors"] == []
+    else:
+        assert any(
+            "RTNETLINK answers: File exists" in error
+            for error in restored["restore_errors"]
+        )
+
+
+def test_restore_treats_ipv6_missing_preference_as_medium(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        omit_pref_on_filtered_routes=True,
+        recreate_link_local_routes_on_return=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+    )
+    state_path = tmp_path / "state.json"
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is True
+    assert restored["restore_errors"] == []
+
+
+def test_restore_replays_saved_ipv6_route_preference(tmp_path):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+        link_local_route_pref="high",
+    )
+    state_path = tmp_path / "state.json"
+    original_routes = list(runner.routes)
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is True
+    assert runner.routes == original_routes
+    assert any(
+        command[:4] == ["ip", "-6", "route", "append"]
+        and "pref" in command
+        and command[command.index("pref") + 1] == "high"
+        for command in runner.commands
+    )
+
+
+@pytest.mark.parametrize(
+    ("metadata_field", "saved_value", "current_value"),
+    [
+        ("pref", "medium", "high"),
+        ("protocol", "kernel", "static"),
+    ],
+)
+def test_restore_keeps_ipv6_route_metadata_mismatch_visible(
+    tmp_path, metadata_field, saved_value, current_value
+):
+    sysfs = tmp_path / "sys" / "class" / "net"
+    sysfs.mkdir(parents=True)
+    make_physical_sysfs(sysfs, "left0", "usb-left")
+    make_physical_sysfs(sysfs, "right0", "usb-right")
+    runner = NamespaceModelRunner(
+        fail_on_second_nic_move=False,
+        omit_dev_on_filtered_routes=True,
+        recreate_link_local_routes_on_return=True,
+        link_local_noprefixroute=True,
+        link_local_route_metric=1024,
+        link_local_route_pref=saved_value if metadata_field == "pref" else "medium",
+    )
+    state_path = tmp_path / "state.json"
+    state = setup_pair(
+        "left0",
+        "right0",
+        state_path=state_path,
+        confirm_isolation=True,
+        runner=runner,
+        sysfs_root=sysfs,
+        env={},
+        is_root=True,
+    )
+    runner.saved_link_local_routes = [
+        {**route, metadata_field: current_value} if route["dev"] == "left0" else route
+        for route in runner.saved_link_local_routes
+    ]
+
+    restored = restore_state(state, state_path=state_path, runner=runner, is_root=True, env={})
+
+    assert restored["restored"] is False
+    assert any("link-local route fe80::/64 conflicts" in error for error in restored["restore_errors"])
+
+
+def test_bridge_test_skips_iperf_when_host_passes_but_hardware_correctness_fails(tmp_path):
+    class FinishedProcess:
+        returncode = 0
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            return self.returncode
+
+    class BridgeOperatorRunner:
+        def __init__(self):
+            self.iperf_commands = []
+
+        def popen(self, argv, **kwargs):
+            command = list(argv)
+            if "_capture_worker" in command:
+                frames_path = Path(command[command.index("--frames") + 1])
+                ready_path = Path(command[command.index("--ready") + 1])
+                result_path = Path(command[command.index("--result") + 1])
+                frame_count = len(json.loads(frames_path.read_text()))
+                ready_path.write_text("ready\n")
+                result_path.write_text(
+                    json.dumps(
+                        {
+                            "passed": True,
+                            "forwarded": 0 if "--expect-drop" in command else frame_count,
+                            "missing": 0,
+                            "duplicates": 0,
+                            "unexpected": 0,
+                            "stale": 0,
+                        }
+                    )
+                )
+            else:
+                self.iperf_commands.append(command)
+            return FinishedProcess()
+
+        def run(self, argv, *, check=True, timeout=30):
+            command = list(argv)
+            if "ping" in command:
+                return subprocess.CompletedProcess(command, 0, "ping ok", "")
+            if "neigh" in command:
+                address = command[command.index("to") + 1]
+                mac = {
+                    "10.77.0.1": "02:00:00:00:00:01",
+                    "10.77.0.2": "02:00:00:00:00:02",
+                }[address]
+                return subprocess.CompletedProcess(command, 0, f"lladdr {mac} REACHABLE", "")
+            if "_send_worker" in command:
+                frames_path = Path(command[command.index("--frames") + 1])
+                frame_count = len(json.loads(frames_path.read_text()))
+                return subprocess.CompletedProcess(
+                    command, 0, json.dumps({"sent": frame_count, "errors": []}), ""
+                )
+            if "-c" in command and any("iperf3" in value for value in command):
+                result = {
+                    "end": {
+                        "sum_received": {"bits_per_second": 1_000_000},
+                        "sum_sent": {"bits_per_second": 1_000_000},
+                    }
+                }
+                return subprocess.CompletedProcess(command, 0, json.dumps(result), "")
+            pytest.fail(f"unexpected command in bridge report runner: {command}")
+
+    def zero_counter_status():
+        return {
+            "links": {
+                f"sfp{index}": {
+                    "link_up": True,
+                    "qpll_locked": True,
+                    "tx_ready": True,
+                    "rx_ready": True,
+                    "loss_of_signal": False,
+                    "control_tx_disable": False,
+                }
+                for index in range(2)
+            },
+            "mac_rx": {
+                f"sfp{index}": {
+                    "preamble_errors": 0,
+                    "crc_errors": 0,
+                    "drops": 0,
+                }
+                for index in range(2)
+            },
+            "forwarding": {
+                direction: {
+                    field: 0
+                    for field in (
+                        "rx_frames",
+                        "tx_frames",
+                        "ipv4_frames",
+                        "arp_frames",
+                        "rejected_frames",
+                        "error_frames",
+                        "overflow_frames",
+                        "ipv6_drops",
+                        "unsupported_drops",
+                    )
+                }
+                for direction in ("sfp0_to_sfp1", "sfp1_to_sfp0")
+            },
+        }
+
+    iperf = tmp_path / "iperf3"
+    iperf.write_text("#!/bin/sh\nexit 0\n")
+    iperf.chmod(0o755)
+    runner = BridgeOperatorRunner()
+    state = {
+        "setup_complete": True,
+        "restored": False,
+        "owner_token": "test-owner",
+        "interfaces": {
+            "left": {
+                "namespace": "bridge-l-test",
+                "interface": "left0",
+                "mac": "02:00:00:00:00:01",
+            },
+            "right": {
+                "namespace": "bridge-r-test",
+                "interface": "right0",
+                "mac": "02:00:00:00:00:02",
+            },
+        },
+    }
+
+    report = bridge_host.run_bridge_test(
+        state,
+        output_dir=tmp_path / "run",
+        runner=runner,
+        status_reader=lambda _port, _csr_csv: zero_counter_status(),
+        iperf3_path=str(iperf),
+        frame_count=1,
+        interval_seconds=0.001,
+        iperf_duration=1,
+    )
+
+    assert report["host_result"]["status"] == "PASS"
+    assert report["hardware_evidence"]["status"] == "FAIL"
+    assert report["performance"]["status"] == "BLOCKED"
+    assert runner.iperf_commands == []
 
 
 def test_setup_rollback_never_deletes_a_namespace_created_by_a_name_collision(tmp_path):

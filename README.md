@@ -6,9 +6,13 @@ The FPGA sends host test frames across that external cable and returns them
 through RTL8211F for exact host verification. Both SFP directions are tested
 separately. See [the cable-loop plan](docs/sfp-cross-port-test.md).
 
-A separate dual-SFP transparent IPv4/ARP bridge is implemented and has passed
-compiled MAC simulation and routed timing. Physical qualification requires two
-dedicated host NICs. See [the bridge test procedure](docs/dual-sfp-bridge-test.md).
+The separate dual-SFP transparent IPv4/ARP bridge passed simulation, routed
+timing and physical two-NIC qualification: 100/100 IPv4 frames each direction,
+ARP/ping in both directions, and zero forwarded IPv6 probes. Final TCP measured
+0.734 Mbps each direction, far below the 500 Mbps target. The single-frame
+buffer drops burst traffic. Host cleanup was verified separately after fixing
+IPv6 route restoration. See [the bridge test procedure](docs/dual-sfp-bridge-test.md)
+and [the saved results](docs/results/2026-10-14/bridge/summary.json).
 
 The original SFP2-only test remains available as the validated baseline below.
 

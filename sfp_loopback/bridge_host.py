@@ -822,11 +822,14 @@ def _restore_link_local_addresses(
             continue
         ip = ipaddress.ip_address(local)
         family = ["-6"] if ip.version == 6 else []
+        args = ["ip", *family, "address", "add", f"{local}/{prefix}", "dev", interface]
+        saved_flags = address.get("flags", [])
+        if address.get("noprefixroute") is True or (
+            isinstance(saved_flags, list) and "noprefixroute" in saved_flags
+        ):
+            args.append("noprefixroute")
         try:
-            _run_mutation(
-                runner,
-                ["ip", *family, "address", "add", f"{local}/{prefix}", "dev", interface],
-            )
+            _run_mutation(runner, args)
             current.append({"local": local, "prefixlen": prefix})
         except (OSError, RuntimeError, subprocess.SubprocessError) as error:
             errors.append(f"{interface}: could not restore link-local address {local}/{prefix}: {error}")
@@ -846,14 +849,22 @@ def _is_link_local_route(route: dict[str, Any]) -> bool:
 
 
 def _route_signature(route: dict[str, Any]) -> tuple[Any, ...]:
+    destination = str(route.get("dst", "default"))
+    try:
+        is_ipv6 = ipaddress.ip_network(destination, strict=False).version == 6
+    except ValueError:
+        is_ipv6 = False
+    preference = route.get("pref", "medium") if is_ipv6 else route.get("pref")
     return (
-        route.get("dst", "default"),
+        destination,
         _route_table(route),
         route.get("dev"),
         route.get("gateway"),
         route.get("prefsrc", route.get("src")),
         route.get("metric"),
         route.get("scope"),
+        route.get("protocol", route.get("proto")),
+        preference,
     )
 
 
@@ -875,7 +886,20 @@ def _restore_link_local_routes(
         destination = str(route["dst"])
         version = ipaddress.ip_network(destination, strict=False).version
         family = ["-6"] if version == 6 else []
-        current = _run_ip_json(runner, [*family, "route", "show", "table", "all", "dev", interface])
+
+        def current_device_routes() -> list[dict[str, Any]]:
+            current_routes = _run_ip_json(
+                runner, [*family, "route", "show", "table", "all", "dev", interface]
+            )
+            # `ip route ... dev IFACE` filters the result but can omit `dev`
+            # from each JSON object. Reapply that query context while keeping
+            # route metadata for exact matching intact.
+            return [
+                item if item.get("dev") is not None else {**item, "dev": interface}
+                for item in current_routes
+            ]
+
+        current = current_device_routes()
         signature = _route_signature(route)
         if any(_route_signature(item) == signature for item in current):
             continue
@@ -890,7 +914,8 @@ def _restore_link_local_routes(
                 f"{interface}: link-local route {destination} conflicts with an existing route; left unchanged"
             )
             continue
-        args = ["ip", *family, "route", "add", destination]
+        operation = "append" if version == 6 else "add"
+        args = ["ip", *family, "route", operation, destination]
         if route.get("gateway"):
             args.extend(("via", str(route["gateway"])))
         args.extend(("dev", interface))
@@ -904,13 +929,33 @@ def _restore_link_local_routes(
             args.extend(("table", str(table)))
         if route.get("scope"):
             args.extend(("scope", str(route["scope"])))
+        if version == 6 and route.get("pref") is not None:
+            args.extend(("pref", str(route["pref"])))
         protocol = route.get("protocol", route.get("proto"))
         if protocol:
             args.extend(("proto", str(protocol)))
         try:
             _run_mutation(runner, args)
         except (OSError, RuntimeError, subprocess.SubprocessError) as error:
-            errors.append(f"{interface}: could not restore link-local route {destination}: {error}")
+            try:
+                appeared = current_device_routes()
+            except (OSError, RuntimeError, subprocess.SubprocessError, ValueError) as verify_error:
+                appeared = []
+                verification_detail = f"; route verification also failed: {verify_error}"
+            else:
+                verification_detail = ""
+            if any(_route_signature(item) == signature for item in appeared):
+                continue
+            stderr = getattr(error, "stderr", None)
+            if isinstance(stderr, bytes):
+                stderr = stderr.decode(errors="replace")
+            detail = str(error)
+            if isinstance(stderr, str) and stderr.strip():
+                detail = f"{detail}: {stderr.strip()}"
+            errors.append(
+                f"{interface}: could not restore link-local route {destination}: "
+                f"{detail}{verification_detail}"
+            )
     return errors
 
 
@@ -1566,6 +1611,24 @@ def run_bridge_test(
             "status": "BLOCKED",
             "iperf3_path": None,
             "reason": "iperf3 is not installed; no throughput measurement was performed",
+            "runs": [],
+        }
+    elif not host_passed or not hardware_passed:
+        failed_checks = [
+            name
+            for name, passed in (
+                ("host_result", host_passed),
+                ("hardware_evidence", hardware_passed),
+            )
+            if not passed
+        ]
+        report["performance"] = {
+            "status": "BLOCKED",
+            "iperf3_path": iperf,
+            "reason": (
+                "iperf3 not run because correctness did not pass: "
+                + ", ".join(failed_checks)
+            ),
             "runs": [],
         }
     else:

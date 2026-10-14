@@ -1,0 +1,5 @@
+{
+  "sfp_loopback/bridge_host.py": "0bba50c11582f7c892a686df0a5f45e42eecf794a3e08e773de9c5a32349a098",
+  "tests/test_bridge_host.py": "bb5a99ef4271f12f474aec3df2996ebf165e7256a093e0d174b8c3f24efc5252",
+  "docs/dual-sfp-bridge-test.md": "a4a5b1f27fe8cf6a2041b068d397ad6f60a792bc0364ce752eed3824f7c4e578"
+}

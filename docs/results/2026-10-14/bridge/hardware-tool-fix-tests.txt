@@ -1,0 +1,4 @@
+$ PYTHONPATH=. .venv/bin/pytest -q tests/test_bridge_host.py tests/test_bridge_diagnostics.py
+41 passed in 0.06s
+$ PYTHONPATH=. .venv/bin/python -m mypy --follow-imports skip --ignore-missing-imports --check-untyped-defs sfp_loopback scripts/bootstrap.py
+Success: no issues found in 17 source files

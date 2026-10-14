@@ -1,0 +1,42 @@
+{
+  "completed": true,
+  "restoration": {
+    "namespaces": {
+      "restored": false,
+      "errors": [
+        "enx00e04c5828c8: could not restore link-local route fe80::/64: Command '['ip', '-6', 'route', 'add', 'fe80::/64', 'dev', 'enx00e04c5828c8', 'metric', '1024', 'proto', 'kernel']' returned non-zero exit status 2.",
+        "enx00e04c5828c8: could not restore link-local route fe80::/64: Command '['ip', '-6', 'route', 'add', 'fe80::/64', 'dev', 'enx00e04c5828c8', 'metric', '1024', 'proto', 'kernel']' returned non-zero exit status 2."
+      ]
+    },
+    "enx98fc84e0c4e8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "managed_restored": true,
+      "connection_restored": true
+    },
+    "enx00e04c5828c8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "managed_restored": true,
+      "connection_restored": true
+    }
+  },
+  "error": null,
+  "test_overall": "PASS"
+}
