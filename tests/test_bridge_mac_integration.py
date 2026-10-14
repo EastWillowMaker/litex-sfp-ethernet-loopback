@@ -154,12 +154,13 @@ def _compiled_testbench(ports):
     return """`timescale 1ns/1ps
 module tb;
 """ + "\n".join(declarations) + """
-    reg [7:0] frame0 [0:2047];
-    reg [7:0] frame1 [0:2047];
-    reg [7:0] sfp0_tx_buffer [0:4095];
-    reg [7:0] sfp1_tx_buffer [0:4095];
-    integer sfp0_tx_ends [0:7];
-    integer sfp1_tx_ends [0:7];
+    reg [7:0] input_bytes [0:262143];
+    reg [7:0] sfp0_tx_buffer [0:262143];
+    reg [7:0] sfp1_tx_buffer [0:262143];
+    integer input_lengths [0:127];
+    integer input_offsets [0:127];
+    integer sfp0_tx_ends [0:127];
+    integer sfp1_tx_ends [0:127];
     integer sfp0_tx_length = 0;
     integer sfp1_tx_length = 0;
     integer sfp0_tx_frame_count = 0;
@@ -169,19 +170,23 @@ module tb;
     integer input_port;
     integer frame_count;
     integer expected_frames;
-    integer frame0_length;
-    integer frame1_length;
+    integer sys_half_period;
     integer i;
     integer j;
     integer total_bytes;
-    string frame0_file;
-    string frame1_file;
+    time burst_start;
+    time burst_end;
+    string input_bytes_file;
+    string input_lengths_file;
 
     bridge_macs dut (
 """ + ",\n".join(connections) + """
     );
 
-    initial begin forever #10 sys_clk = ~sys_clk; end
+    initial begin
+        if (!$value$plusargs("SYS_HALF_PERIOD=%d", sys_half_period)) sys_half_period = 10;
+        forever #(sys_half_period) sys_clk = ~sys_clk;
+    end
     initial begin forever #4 sfp0_rx_clk = ~sfp0_rx_clk; end
     initial begin #1; forever #4 sfp0_tx_clk = ~sfp0_tx_clk; end
     initial begin #2; forever #4 sfp1_rx_clk = ~sfp1_rx_clk; end
@@ -194,7 +199,8 @@ module tb;
             sfp0_tx_in_frame = 0;
         end else if (sfp0_tx_valid) begin
             if (sfp0_tx_error) $fatal(1, "SFP0 MAC TX reported an error");
-            if (sfp0_tx_length >= 4096) $fatal(1, "SFP0 TX buffer overflow");
+            if (sfp0_tx_length >= 262144) $fatal(1, "SFP0 TX buffer overflow");
+            if (sfp0_tx_frame_count >= 128) $fatal(1, "SFP0 frame table overflow");
             sfp0_tx_buffer[sfp0_tx_length] = sfp0_tx_data;
             sfp0_tx_length = sfp0_tx_length + 1;
             if (sfp0_tx_last) begin
@@ -216,7 +222,8 @@ module tb;
             sfp1_tx_in_frame = 0;
         end else if (sfp1_tx_valid) begin
             if (sfp1_tx_error) $fatal(1, "SFP1 MAC TX reported an error");
-            if (sfp1_tx_length >= 4096) $fatal(1, "SFP1 TX buffer overflow");
+            if (sfp1_tx_length >= 262144) $fatal(1, "SFP1 TX buffer overflow");
+            if (sfp1_tx_frame_count >= 128) $fatal(1, "SFP1 frame table overflow");
             sfp1_tx_buffer[sfp1_tx_length] = sfp1_tx_data;
             sfp1_tx_length = sfp1_tx_length + 1;
             if (sfp1_tx_last) begin
@@ -276,8 +283,7 @@ module tb;
 
     function automatic [7:0] frame_byte(input integer frame, input integer index);
     begin
-        if (frame == 0) frame_byte = frame0[index];
-        else frame_byte = frame1[index];
+        frame_byte = input_bytes[input_offsets[frame] + index];
     end
     endfunction
 
@@ -288,6 +294,16 @@ module tb;
         for (k = 0; k < length; k = k + 1)
             send_beat(port, k, length, frame_byte(frame, k));
         end_frame(port);
+    end
+    endtask
+
+    task automatic send_burst(input integer port);
+        integer frame;
+    begin
+        for (frame = 0; frame < frame_count; frame = frame + 1) begin
+            send_frame(port, frame, input_lengths[frame]);
+            if (frame + 1 < frame_count) idle_port(port, 12);
+        end
     end
     endtask
 
@@ -308,7 +324,7 @@ module tb;
         integer k;
     begin
         start = 0;
-        for (frame = 0; frame < 8; frame = frame + 1) begin
+        for (frame = 0; frame < 128; frame = frame + 1) begin
             if ((port == 0 && frame < sfp0_tx_frame_count) ||
                 (port == 1 && frame < sfp1_tx_frame_count)) begin
                 if (port == 0) finish = sfp0_tx_ends[frame];
@@ -329,15 +345,17 @@ module tb;
         if (!$value$plusargs("INPUT_PORT=%d", input_port)) $fatal(1, "missing INPUT_PORT");
         if (!$value$plusargs("FRAME_COUNT=%d", frame_count)) $fatal(1, "missing FRAME_COUNT");
         if (!$value$plusargs("EXPECTED_FRAMES=%d", expected_frames)) $fatal(1, "missing EXPECTED_FRAMES");
-        if (!$value$plusargs("FRAME0_LENGTH=%d", frame0_length)) $fatal(1, "missing FRAME0_LENGTH");
-        if (!$value$plusargs("FRAME0_FILE=%s", frame0_file)) $fatal(1, "missing FRAME0_FILE");
-        $readmemh(frame0_file, frame0, 0, frame0_length - 1);
-        frame1_length = 0;
-        if (frame_count > 1) begin
-            if (!$value$plusargs("FRAME1_LENGTH=%d", frame1_length)) $fatal(1, "missing FRAME1_LENGTH");
-            if (!$value$plusargs("FRAME1_FILE=%s", frame1_file)) $fatal(1, "missing FRAME1_FILE");
-            $readmemh(frame1_file, frame1, 0, frame1_length - 1);
+        if (frame_count < 1 || frame_count > 128) $fatal(1, "FRAME_COUNT out of range");
+        if (!$value$plusargs("INPUT_BYTES_FILE=%s", input_bytes_file)) $fatal(1, "missing INPUT_BYTES_FILE");
+        if (!$value$plusargs("INPUT_LENGTHS_FILE=%s", input_lengths_file)) $fatal(1, "missing INPUT_LENGTHS_FILE");
+        $readmemh(input_lengths_file, input_lengths, 0, frame_count - 1);
+        total_bytes = 0;
+        for (i = 0; i < frame_count; i = i + 1) begin
+            input_offsets[i] = total_bytes;
+            total_bytes = total_bytes + input_lengths[i];
         end
+        $readmemh(input_bytes_file, input_bytes, 0, total_bytes - 1);
+        if (input_port < -1 || input_port > 1) $fatal(1, "INPUT_PORT out of range");
 
         sys_clk = 0;
         sfp0_rx_clk = 0;
@@ -369,18 +387,25 @@ module tb;
         sfp1_rx_rst = 0;
         sfp1_tx_rst = 0;
         repeat (10) @(posedge sys_clk);
-        if (frame_count > 0) send_frame(input_port, 0, frame0_length);
-        if (frame_count > 1) begin
-            idle_port(input_port, 12);
-            send_frame(input_port, 1, frame1_length);
+        burst_start = $time;
+        if (input_port == -1) begin
+            fork
+                send_burst(0);
+                send_burst(1);
+            join
+            repeat (8192) @(posedge sys_clk);
+            burst_end = $time;
+        end else begin
+            send_burst(input_port);
+            if (expected_frames > 0) begin
+                if (input_port == 0) wait (sfp1_tx_frame_count == expected_frames);
+                else wait (sfp0_tx_frame_count == expected_frames);
+                burst_end = $time;
+            end else begin
+                repeat (total_bytes * 16 + 1200) @(posedge sys_clk);
+                burst_end = $time;
+            end
         end
-
-        total_bytes = frame0_length + frame1_length;
-        if (expected_frames > 0) begin
-            if (input_port == 0) wait (sfp1_tx_frame_count == expected_frames);
-            else wait (sfp0_tx_frame_count == expected_frames);
-        end
-        repeat (total_bytes * 16 + 1200) @(posedge sys_clk);
         repeat (100) @(posedge sys_clk);
 
         print_frames(0);
@@ -396,37 +421,41 @@ module tb;
                  forward1_overflow_frames, forward1_ipv6_drops,
                  forward1_unsupported_drops);
         $display("MACCRC %0d %0d", sfp0_rx_crc_errors, sfp1_rx_crc_errors);
+        $display("ELAPSED_NS %0d", burst_end - burst_start);
         $finish;
     end
 
     initial begin
-        #1000000;
+        #20000000;
         $fatal(1, "compiled bridge MAC simulation timed out");
     end
 endmodule
 """
 
 
-def _simulate_bridge(executable, frames, input_port, expected_frames):
+def _simulate_bridge(
+    executable, frames, input_port, expected_frames, *,
+    sys_half_period_ns=10, return_elapsed=False,
+):
     with tempfile.TemporaryDirectory(prefix="bridge-mac-") as directory:
-        paths = []
-        for index, frame in enumerate(frames):
-            path = Path(directory) / f"frame{index}.hex"
-            path.write_text("\n".join(f"{byte:02x}" for byte in frame) + "\n")
-            paths.append(path)
+        byte_path = Path(directory) / "input-bytes.hex"
+        length_path = Path(directory) / "input-lengths.hex"
+        byte_path.write_text(
+            "\n".join(f"{byte:02x}" for frame in frames for byte in frame) + "\n"
+        )
+        length_path.write_text("\n".join(f"{len(frame):x}" for frame in frames) + "\n")
 
         args = [
             executable,
             f"+INPUT_PORT={input_port}",
             f"+FRAME_COUNT={len(frames)}",
             f"+EXPECTED_FRAMES={expected_frames}",
-            f"+FRAME0_LENGTH={len(frames[0])}",
-            f"+FRAME0_FILE={paths[0]}",
+            f"+SYS_HALF_PERIOD={sys_half_period_ns}",
+            f"+INPUT_BYTES_FILE={byte_path}",
+            f"+INPUT_LENGTHS_FILE={length_path}",
         ]
-        if len(frames) > 1:
-            args.extend((f"+FRAME1_LENGTH={len(frames[1])}", f"+FRAME1_FILE={paths[1]}"))
         result = subprocess.run(
-            args, check=True, capture_output=True, text=True, timeout=10
+            args, check=True, capture_output=True, text=True, timeout=20
         )
 
     transmitted = [[], []]
@@ -444,6 +473,10 @@ def _simulate_bridge(executable, frames, input_port, expected_frames):
     match = re.search(r"^MACCRC (\d+) (\d+)$", result.stdout, re.MULTILINE)
     assert match is not None, result.stdout
     counts["mac_crc_errors"] = tuple(map(int, match.groups()))
+    match = re.search(r"^ELAPSED_NS (\d+)$", result.stdout, re.MULTILINE)
+    assert match is not None, result.stdout
+    if return_elapsed:
+        return transmitted, counts, int(match.group(1))
     return transmitted, counts
 
 
@@ -477,8 +510,8 @@ def simulate_bridge(tmp_path_factory):
         text=True,
         timeout=120,
     )
-    return lambda frames, input_port, expected_frames: _simulate_bridge(
-        str(executable), frames, input_port, expected_frames
+    return lambda frames, input_port, expected_frames, **options: _simulate_bridge(
+        str(executable), frames, input_port, expected_frames, **options
     )
 
 
@@ -544,3 +577,51 @@ def test_real_macs_reject_bad_fcs_and_forward_the_next_valid_frame(
     )
     expected_counts["mac_crc_errors"] = (1, 0) if direction == 0 else (0, 1)
     assert counts == expected_counts
+
+
+def test_real_macs_sustain_bidirectional_ipv4_bursts_above_500_mbps(
+    simulate_bridge,
+):
+    valid = wire_frame(ipv4_frame(1514))
+    ipv6 = wire_frame(filtered_frame("ipv6"))
+    bad_fcs = bytearray(valid)
+    bad_fcs[-1] ^= 1
+    frames = []
+    for _ in range(6):
+        frames.extend([valid] * 6)
+        frames.extend((ipv6, bytes(bad_fcs)))
+
+    transmitted, counts, elapsed_ns = simulate_bridge(
+        frames, -1, 36, sys_half_period_ns=4, return_elapsed=True
+    )
+
+    forwarded_bits = [
+        sum(max(0, len(frame) - len(PREAMBLE) - 4) for frame in port) * 8
+        for port in transmitted
+    ]
+    measured_mbps = [bits * 1000 // elapsed_ns for bits in forwarded_bits]
+    assert transmitted == [[valid] * 36, [valid] * 36], (
+        f"physical output frame counts={[len(port) for port in transmitted]}, "
+        f"bridge counters={counts}, elapsed={elapsed_ns} ns, "
+        f"per-direction payload throughput={measured_mbps} Mbps"
+    )
+    path_counts = {counter: 0 for counter in FORWARD_COUNTERS}
+    path_counts.update(
+        rx_frames=36,
+        tx_frames=36,
+        ipv4_frames=36,
+        rejected_frames=12,
+        error_frames=6,
+        ipv6_drops=6,
+    )
+    assert counts == {
+        "forward0": path_counts,
+        "forward1": path_counts,
+        "mac_crc_errors": (6, 6),
+    }
+
+    assert elapsed_ns <= 1_000_000, "burst simulation exceeded its 1 ms window"
+    assert all(rate >= 500 for rate in measured_mbps), (
+        f"physical-MAC bridge forwarded {measured_mbps} Mbps per direction "
+        f"within {elapsed_ns} ns; each direction must reach 500 Mbps"
+    )

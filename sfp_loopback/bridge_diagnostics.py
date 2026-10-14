@@ -84,7 +84,7 @@ def main():
         "--port",
         default="/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
     )
-    parser.add_argument("--csr-csv", default="build/sfp_bridge/csr.csv")
+    parser.add_argument("--csr-csv", default="build/sfp_bridge500/csr.csv")
     parser.add_argument("--output", help="Save the status snapshot as JSON.")
     args = parser.parse_args()
     with BoundedUART(args.port, csr_csv=args.csr_csv) as bus:

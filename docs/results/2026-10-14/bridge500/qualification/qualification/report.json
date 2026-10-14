@@ -1,0 +1,1033 @@
+{
+  "created_utc": "2026-10-14T14:01:16Z",
+  "state_file_owner": "1b3e96",
+  "host_result": {
+    "status": "PASS",
+    "arp_and_ping": [
+      {
+        "source": "left",
+        "destination": "right",
+        "ping_returncode": 0,
+        "ping_log": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/left_to_right_ping.log",
+        "arp_neighbor": "10.77.0.2 lladdr 00:e0:4c:58:28:c8 REACHABLE",
+        "arp_resolved_expected_mac": true,
+        "passed": true
+      },
+      {
+        "source": "right",
+        "destination": "left",
+        "ping_returncode": 0,
+        "ping_log": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/right_to_left_ping.log",
+        "arp_neighbor": "10.77.0.1 lladdr 98:fc:84:e0:c4:e8 DELAY",
+        "arp_resolved_expected_mac": true,
+        "passed": true
+      }
+    ],
+    "raw_packet_cases": [
+      {
+        "source": "left",
+        "destination": "right",
+        "ethertype": "0x0800",
+        "run_id": "e1ceacf267b57f40",
+        "frame_count": 100,
+        "pace_seconds": 0.01,
+        "sender": {
+          "sent": 100,
+          "errors": []
+        },
+        "capture": {
+          "sent": 100,
+          "forwarded": 100,
+          "unique_forwarded": 100,
+          "missing": 0,
+          "duplicates": 0,
+          "stale": 0,
+          "unexpected": 0,
+          "unexpected_forwarded": 0,
+          "malformed_peer_frames": 0,
+          "ignored_outgoing": 7,
+          "forwarding_expected": true,
+          "passed": true
+        },
+        "pcap": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/left_to_right_ipv4-rx.pcap",
+        "host_passed": true,
+        "hardware": {
+          "direction": "sfp0_to_sfp1",
+          "counter_deltas": {
+            "rx_frames": 100,
+            "tx_frames": 100,
+            "ipv4_frames": 100,
+            "arp_frames": 0,
+            "rejected_frames": 1,
+            "error_frames": 0,
+            "overflow_frames": 0,
+            "ipv6_drops": 1,
+            "unsupported_drops": 0
+          },
+          "allowlisted_background_frames": {
+            "ipv4_frames": 100,
+            "arp_frames": 0,
+            "maximum_explained_tx_frames": 100
+          },
+          "mac_counter_deltas": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            }
+          },
+          "requirements": {
+            "rx_frames": true,
+            "tx_frames": true,
+            "ipv4_frames": true,
+            "no_path_errors": true,
+            "no_path_overflows": true,
+            "no_mac_errors_or_drops": true
+          },
+          "passed": true
+        }
+      },
+      {
+        "source": "left",
+        "destination": "right",
+        "ethertype": "0x86dd",
+        "run_id": "13489c028777b104",
+        "frame_count": 100,
+        "pace_seconds": 0.01,
+        "sender": {
+          "sent": 100,
+          "errors": []
+        },
+        "capture": {
+          "sent": 100,
+          "forwarded": 0,
+          "unique_forwarded": 0,
+          "missing": 0,
+          "duplicates": 0,
+          "stale": 0,
+          "unexpected": 0,
+          "unexpected_forwarded": 0,
+          "malformed_peer_frames": 0,
+          "ignored_outgoing": 1,
+          "forwarding_expected": false,
+          "passed": true
+        },
+        "pcap": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/left_to_right_ipv6_drop-rx.pcap",
+        "host_passed": true,
+        "hardware": {
+          "direction": "sfp0_to_sfp1",
+          "counter_deltas": {
+            "rx_frames": 0,
+            "tx_frames": 0,
+            "ipv4_frames": 0,
+            "arp_frames": 0,
+            "rejected_frames": 100,
+            "error_frames": 0,
+            "overflow_frames": 0,
+            "ipv6_drops": 100,
+            "unsupported_drops": 0
+          },
+          "allowlisted_background_frames": {
+            "ipv4_frames": 0,
+            "arp_frames": 0,
+            "maximum_explained_tx_frames": 0
+          },
+          "mac_counter_deltas": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            }
+          },
+          "requirements": {
+            "ipv6_drops": true,
+            "tx_frames_explained_by_ipv4_or_arp": true,
+            "no_path_errors": true,
+            "no_path_overflows": true,
+            "no_mac_errors_or_drops": true
+          },
+          "passed": true
+        }
+      },
+      {
+        "source": "right",
+        "destination": "left",
+        "ethertype": "0x0800",
+        "run_id": "92d847f77cc7f1b7",
+        "frame_count": 100,
+        "pace_seconds": 0.01,
+        "sender": {
+          "sent": 100,
+          "errors": []
+        },
+        "capture": {
+          "sent": 100,
+          "forwarded": 100,
+          "unique_forwarded": 100,
+          "missing": 0,
+          "duplicates": 0,
+          "stale": 0,
+          "unexpected": 0,
+          "unexpected_forwarded": 0,
+          "malformed_peer_frames": 0,
+          "ignored_outgoing": 7,
+          "forwarding_expected": true,
+          "passed": true
+        },
+        "pcap": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/right_to_left_ipv4-rx.pcap",
+        "host_passed": true,
+        "hardware": {
+          "direction": "sfp1_to_sfp0",
+          "counter_deltas": {
+            "rx_frames": 100,
+            "tx_frames": 100,
+            "ipv4_frames": 100,
+            "arp_frames": 0,
+            "rejected_frames": 0,
+            "error_frames": 0,
+            "overflow_frames": 0,
+            "ipv6_drops": 0,
+            "unsupported_drops": 0
+          },
+          "allowlisted_background_frames": {
+            "ipv4_frames": 100,
+            "arp_frames": 0,
+            "maximum_explained_tx_frames": 100
+          },
+          "mac_counter_deltas": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            }
+          },
+          "requirements": {
+            "rx_frames": true,
+            "tx_frames": true,
+            "ipv4_frames": true,
+            "no_path_errors": true,
+            "no_path_overflows": true,
+            "no_mac_errors_or_drops": true
+          },
+          "passed": true
+        }
+      },
+      {
+        "source": "right",
+        "destination": "left",
+        "ethertype": "0x86dd",
+        "run_id": "efe0d7ee94cb57f6",
+        "frame_count": 100,
+        "pace_seconds": 0.01,
+        "sender": {
+          "sent": 100,
+          "errors": []
+        },
+        "capture": {
+          "sent": 100,
+          "forwarded": 0,
+          "unique_forwarded": 0,
+          "missing": 0,
+          "duplicates": 0,
+          "stale": 0,
+          "unexpected": 0,
+          "unexpected_forwarded": 0,
+          "malformed_peer_frames": 0,
+          "ignored_outgoing": 1,
+          "forwarding_expected": false,
+          "passed": true
+        },
+        "pcap": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/right_to_left_ipv6_drop-rx.pcap",
+        "host_passed": true,
+        "hardware": {
+          "direction": "sfp1_to_sfp0",
+          "counter_deltas": {
+            "rx_frames": 0,
+            "tx_frames": 0,
+            "ipv4_frames": 0,
+            "arp_frames": 0,
+            "rejected_frames": 101,
+            "error_frames": 0,
+            "overflow_frames": 0,
+            "ipv6_drops": 101,
+            "unsupported_drops": 0
+          },
+          "allowlisted_background_frames": {
+            "ipv4_frames": 0,
+            "arp_frames": 0,
+            "maximum_explained_tx_frames": 0
+          },
+          "mac_counter_deltas": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            }
+          },
+          "requirements": {
+            "ipv6_drops": true,
+            "tx_frames_explained_by_ipv4_or_arp": true,
+            "no_path_errors": true,
+            "no_path_overflows": true,
+            "no_mac_errors_or_drops": true
+          },
+          "passed": true
+        }
+      }
+    ],
+    "failures": []
+  },
+  "hardware_evidence": {
+    "status": "PASS",
+    "snapshots": [
+      {
+        "label": "before_host_tests",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518541,
+              "tx_frames": 518541,
+              "ipv4_frames": 518539,
+              "arp_frames": 2,
+              "rejected_frames": 130,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 130,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519477,
+              "tx_frames": 519477,
+              "ipv4_frames": 519475,
+              "arp_frames": 2,
+              "rejected_frames": 3753,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 137,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp0_to_sfp1_0800_before",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518546,
+              "tx_frames": 518546,
+              "ipv4_frames": 518543,
+              "arp_frames": 3,
+              "rejected_frames": 134,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 134,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519482,
+              "tx_frames": 519482,
+              "ipv4_frames": 519479,
+              "arp_frames": 3,
+              "rejected_frames": 3758,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 142,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp0_to_sfp1_0800_after",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518646,
+              "tx_frames": 518646,
+              "ipv4_frames": 518643,
+              "arp_frames": 3,
+              "rejected_frames": 135,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 135,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519490,
+              "tx_frames": 519490,
+              "ipv4_frames": 519486,
+              "arp_frames": 4,
+              "rejected_frames": 3758,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 142,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp0_to_sfp1_86dd_before",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518647,
+              "tx_frames": 518647,
+              "ipv4_frames": 518643,
+              "arp_frames": 4,
+              "rejected_frames": 135,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 135,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519490,
+              "tx_frames": 519490,
+              "ipv4_frames": 519486,
+              "arp_frames": 4,
+              "rejected_frames": 3758,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 142,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp0_to_sfp1_86dd_after",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518647,
+              "tx_frames": 518647,
+              "ipv4_frames": 518643,
+              "arp_frames": 4,
+              "rejected_frames": 235,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 235,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519490,
+              "tx_frames": 519490,
+              "ipv4_frames": 519486,
+              "arp_frames": 4,
+              "rejected_frames": 3759,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 143,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp1_to_sfp0_0800_before",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518647,
+              "tx_frames": 518647,
+              "ipv4_frames": 518643,
+              "arp_frames": 4,
+              "rejected_frames": 235,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 235,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519490,
+              "tx_frames": 519490,
+              "ipv4_frames": 519486,
+              "arp_frames": 4,
+              "rejected_frames": 3759,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 143,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp1_to_sfp0_0800_after",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518654,
+              "tx_frames": 518654,
+              "ipv4_frames": 518650,
+              "arp_frames": 4,
+              "rejected_frames": 235,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 235,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519590,
+              "tx_frames": 519590,
+              "ipv4_frames": 519586,
+              "arp_frames": 4,
+              "rejected_frames": 3759,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 143,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp1_to_sfp0_86dd_before",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518654,
+              "tx_frames": 518654,
+              "ipv4_frames": 518650,
+              "arp_frames": 4,
+              "rejected_frames": 235,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 235,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519590,
+              "tx_frames": 519590,
+              "ipv4_frames": 519586,
+              "arp_frames": 4,
+              "rejected_frames": 3759,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 143,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "sfp1_to_sfp0_86dd_after",
+        "status": {
+          "links": {
+            "sfp0": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            },
+            "sfp1": {
+              "link_up": 1,
+              "qpll_locked": 1,
+              "tx_ready": 1,
+              "rx_ready": 1,
+              "loss_of_signal": 0,
+              "control_tx_disable": 0
+            }
+          },
+          "mac_rx": {
+            "sfp0": {
+              "preamble_errors": 0,
+              "crc_errors": 0,
+              "drops": 0
+            },
+            "sfp1": {
+              "preamble_errors": 2656731,
+              "crc_errors": 6510,
+              "drops": 0
+            }
+          },
+          "forwarding": {
+            "sfp0_to_sfp1": {
+              "rx_frames": 518654,
+              "tx_frames": 518654,
+              "ipv4_frames": 518650,
+              "arp_frames": 4,
+              "rejected_frames": 236,
+              "error_frames": 0,
+              "overflow_frames": 0,
+              "ipv6_drops": 236,
+              "unsupported_drops": 0
+            },
+            "sfp1_to_sfp0": {
+              "rx_frames": 519590,
+              "tx_frames": 519590,
+              "ipv4_frames": 519586,
+              "arp_frames": 4,
+              "rejected_frames": 3860,
+              "error_frames": 3616,
+              "overflow_frames": 0,
+              "ipv6_drops": 244,
+              "unsupported_drops": 0
+            }
+          }
+        }
+      }
+    ],
+    "cases": [
+      {
+        "direction": "sfp0_to_sfp1",
+        "counter_deltas": {
+          "rx_frames": 100,
+          "tx_frames": 100,
+          "ipv4_frames": 100,
+          "arp_frames": 0,
+          "rejected_frames": 1,
+          "error_frames": 0,
+          "overflow_frames": 0,
+          "ipv6_drops": 1,
+          "unsupported_drops": 0
+        },
+        "allowlisted_background_frames": {
+          "ipv4_frames": 100,
+          "arp_frames": 0,
+          "maximum_explained_tx_frames": 100
+        },
+        "mac_counter_deltas": {
+          "sfp0": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          },
+          "sfp1": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          }
+        },
+        "requirements": {
+          "rx_frames": true,
+          "tx_frames": true,
+          "ipv4_frames": true,
+          "no_path_errors": true,
+          "no_path_overflows": true,
+          "no_mac_errors_or_drops": true
+        },
+        "passed": true
+      },
+      {
+        "direction": "sfp0_to_sfp1",
+        "counter_deltas": {
+          "rx_frames": 0,
+          "tx_frames": 0,
+          "ipv4_frames": 0,
+          "arp_frames": 0,
+          "rejected_frames": 100,
+          "error_frames": 0,
+          "overflow_frames": 0,
+          "ipv6_drops": 100,
+          "unsupported_drops": 0
+        },
+        "allowlisted_background_frames": {
+          "ipv4_frames": 0,
+          "arp_frames": 0,
+          "maximum_explained_tx_frames": 0
+        },
+        "mac_counter_deltas": {
+          "sfp0": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          },
+          "sfp1": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          }
+        },
+        "requirements": {
+          "ipv6_drops": true,
+          "tx_frames_explained_by_ipv4_or_arp": true,
+          "no_path_errors": true,
+          "no_path_overflows": true,
+          "no_mac_errors_or_drops": true
+        },
+        "passed": true
+      },
+      {
+        "direction": "sfp1_to_sfp0",
+        "counter_deltas": {
+          "rx_frames": 100,
+          "tx_frames": 100,
+          "ipv4_frames": 100,
+          "arp_frames": 0,
+          "rejected_frames": 0,
+          "error_frames": 0,
+          "overflow_frames": 0,
+          "ipv6_drops": 0,
+          "unsupported_drops": 0
+        },
+        "allowlisted_background_frames": {
+          "ipv4_frames": 100,
+          "arp_frames": 0,
+          "maximum_explained_tx_frames": 100
+        },
+        "mac_counter_deltas": {
+          "sfp0": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          },
+          "sfp1": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          }
+        },
+        "requirements": {
+          "rx_frames": true,
+          "tx_frames": true,
+          "ipv4_frames": true,
+          "no_path_errors": true,
+          "no_path_overflows": true,
+          "no_mac_errors_or_drops": true
+        },
+        "passed": true
+      },
+      {
+        "direction": "sfp1_to_sfp0",
+        "counter_deltas": {
+          "rx_frames": 0,
+          "tx_frames": 0,
+          "ipv4_frames": 0,
+          "arp_frames": 0,
+          "rejected_frames": 101,
+          "error_frames": 0,
+          "overflow_frames": 0,
+          "ipv6_drops": 101,
+          "unsupported_drops": 0
+        },
+        "allowlisted_background_frames": {
+          "ipv4_frames": 0,
+          "arp_frames": 0,
+          "maximum_explained_tx_frames": 0
+        },
+        "mac_counter_deltas": {
+          "sfp0": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          },
+          "sfp1": {
+            "preamble_errors": 0,
+            "crc_errors": 0,
+            "drops": 0
+          }
+        },
+        "requirements": {
+          "ipv6_drops": true,
+          "tx_frames_explained_by_ipv4_or_arp": true,
+          "no_path_errors": true,
+          "no_path_overflows": true,
+          "no_mac_errors_or_drops": true
+        },
+        "passed": true
+      }
+    ],
+    "link_status": "PASS"
+  },
+  "performance": {
+    "status": "PASS",
+    "iperf3_path": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge/iperf3",
+    "runs": [
+      {
+        "source": "left",
+        "destination": "right",
+        "status": "PASS",
+        "throughput_mbps_received": 941.405,
+        "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+        "sender_bits_per_second": 942213050.5560963,
+        "receiver_bits_per_second": 941404739.79786,
+        "client_returncode": 0,
+        "server_returncode": 0,
+        "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-left-to-right.json",
+        "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-left-to-right-server.json"
+      },
+      {
+        "source": "right",
+        "destination": "left",
+        "status": "PASS",
+        "throughput_mbps_received": 941.403,
+        "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+        "sender_bits_per_second": 942310962.5847585,
+        "receiver_bits_per_second": 941402763.0864955,
+        "client_returncode": 0,
+        "server_returncode": 0,
+        "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-right-to-left.json",
+        "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-right-to-left-server.json"
+      }
+    ],
+    "threshold_mbps": null,
+    "threshold_note": "Throughput is recorded as measured; there is no 500 Mbps correctness gate."
+  },
+  "artifacts_directory": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification",
+  "overall": "PASS"
+}

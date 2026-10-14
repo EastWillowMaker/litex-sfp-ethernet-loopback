@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-14T13:58:38Z",
+  "owner_token": "9438e6",
+  "namespaces": {
+    "left": "bridge-l-9438e6",
+    "right": "bridge-r-9438e6"
+  },
+  "owned_namespaces": [
+    "bridge-l-9438e6",
+    "bridge-r-9438e6"
+  ],
+  "interfaces": {
+    "left": {
+      "interface": "enx98fc84e0c4e8",
+      "mac": "98:fc:84:e0:c4:e8",
+      "device": "/sys/devices/pci0000:00/0000:00:08.3/0000:68:00.3/usb6/6-1/6-1.2/6-1.2:1.0",
+      "was_up": true,
+      "mtu": 1500,
+      "addresses": [
+        {
+          "family": "inet6",
+          "local": "fe80::5ed4:acba:a04e:40ad",
+          "prefixlen": 64,
+          "scope": "link",
+          "noprefixroute": true,
+          "valid_life_time": 4294967295,
+          "preferred_life_time": 4294967295
+        }
+      ],
+      "routes": [
+        {
+          "dst": "fe80::/64",
+          "dev": "enx98fc84e0c4e8",
+          "protocol": "kernel",
+          "metric": 1024,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "local",
+          "dst": "fe80::5ed4:acba:a04e:40ad",
+          "dev": "enx98fc84e0c4e8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 0,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "multicast",
+          "dst": "ff00::/8",
+          "dev": "enx98fc84e0c4e8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 256,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "dst": "fe80::/64",
+          "dev": "enx98fc84e0c4e8",
+          "protocol": "kernel",
+          "metric": 1024,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "local",
+          "dst": "fe80::5ed4:acba:a04e:40ad",
+          "dev": "enx98fc84e0c4e8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 0,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "multicast",
+          "dst": "ff00::/8",
+          "dev": "enx98fc84e0c4e8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 256,
+          "flags": [],
+          "pref": "medium"
+        }
+      ],
+      "network_manager": {
+        "available": true,
+        "managed": false,
+        "connection": null
+      },
+      "namespace": "bridge-l-9438e6",
+      "test_ipv4": "10.77.0.1"
+    },
+    "right": {
+      "interface": "enx00e04c5828c8",
+      "mac": "00:e0:4c:58:28:c8",
+      "device": "/sys/devices/pci0000:00/0000:00:08.3/0000:68:00.4/usb8/8-1/8-1:1.0",
+      "was_up": true,
+      "mtu": 1500,
+      "addresses": [
+        {
+          "family": "inet6",
+          "local": "fe80::22bb:fc1d:6921:2c8d",
+          "prefixlen": 64,
+          "scope": "link",
+          "noprefixroute": true,
+          "valid_life_time": 4294967295,
+          "preferred_life_time": 4294967295
+        }
+      ],
+      "routes": [
+        {
+          "dst": "fe80::/64",
+          "dev": "enx00e04c5828c8",
+          "protocol": "kernel",
+          "metric": 1024,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "local",
+          "dst": "fe80::22bb:fc1d:6921:2c8d",
+          "dev": "enx00e04c5828c8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 0,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "multicast",
+          "dst": "ff00::/8",
+          "dev": "enx00e04c5828c8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 256,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "dst": "fe80::/64",
+          "dev": "enx00e04c5828c8",
+          "protocol": "kernel",
+          "metric": 1024,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "local",
+          "dst": "fe80::22bb:fc1d:6921:2c8d",
+          "dev": "enx00e04c5828c8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 0,
+          "flags": [],
+          "pref": "medium"
+        },
+        {
+          "type": "multicast",
+          "dst": "ff00::/8",
+          "dev": "enx00e04c5828c8",
+          "table": "local",
+          "protocol": "kernel",
+          "metric": 256,
+          "flags": [],
+          "pref": "medium"
+        }
+      ],
+      "network_manager": {
+        "available": true,
+        "managed": false,
+        "connection": null
+      },
+      "namespace": "bridge-r-9438e6",
+      "test_ipv4": "10.77.0.2"
+    }
+  },
+  "restored": true,
+  "confirmation": "--confirm-isolation",
+  "safety_snapshot": {
+    "default_route_interfaces": [
+      "wlp99s0"
+    ],
+    "ssh_route_interfaces": []
+  },
+  "setup_complete": true,
+  "restore_errors": [],
+  "restored_utc": "2026-10-14T13:58:44Z"
+}

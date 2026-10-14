@@ -1,0 +1,93 @@
+{
+  "phase": "baseline",
+  "target_mbps": 500,
+  "passed": false,
+  "restoration": {
+    "namespaces": {
+      "restored": true,
+      "errors": []
+    },
+    "enx98fc84e0c4e8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": null
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "passed": true
+    },
+    "enx00e04c5828c8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": null
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "passed": true
+    }
+  },
+  "source_sha256": "0bba50c11582f7c892a686df0a5f45e42eecf794a3e08e773de9c5a32349a098",
+  "correctness_status": "NOT RUN: diagnostic throughput only",
+  "runs": [
+    {
+      "source": "left",
+      "destination": "right",
+      "status": "PASS",
+      "throughput_mbps_received": 0.699,
+      "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+      "sender_bits_per_second": 1048102.6069891765,
+      "receiver_bits_per_second": 698657.3225940462,
+      "client_returncode": 0,
+      "server_returncode": 0,
+      "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-215444-baseline/iperf-left-to-right.json",
+      "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-215444-baseline/iperf-left-to-right-server.json"
+    },
+    {
+      "source": "right",
+      "destination": "left",
+      "status": "PASS",
+      "throughput_mbps_received": 0.699,
+      "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+      "sender_bits_per_second": 1048034.8646648781,
+      "receiver_bits_per_second": 698598.6733250254,
+      "client_returncode": 0,
+      "server_returncode": 0,
+      "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-215444-baseline/iperf-right-to-left.json",
+      "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-215444-baseline/iperf-right-to-left-server.json"
+    }
+  ],
+  "throughput_passed": false,
+  "directional_counter_deltas": {
+    "sfp0_to_sfp1": {
+      "rx_frames": 523,
+      "tx_frames": 523,
+      "ipv4_frames": 522,
+      "arp_frames": 1,
+      "rejected_frames": 121,
+      "error_frames": 0,
+      "overflow_frames": 116,
+      "ipv6_drops": 5,
+      "unsupported_drops": 0
+    },
+    "sfp1_to_sfp0": {
+      "rx_frames": 530,
+      "tx_frames": 530,
+      "ipv4_frames": 529,
+      "arp_frames": 1,
+      "rejected_frames": 130,
+      "error_frames": 0,
+      "overflow_frames": 123,
+      "ipv6_drops": 7,
+      "unsupported_drops": 0
+    }
+  },
+  "restore_passed": true
+}

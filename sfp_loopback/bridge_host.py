@@ -37,7 +37,7 @@ IPV6_ADDRESSES = {"left": "2001:db8:77::1", "right": "2001:db8:77::2"}
 DEFAULT_STATE = Path("artifacts/bridge-host/state.json")
 DEFAULT_OUTPUT = Path("artifacts/bridge-host/latest")
 DEFAULT_PORT = "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
-DEFAULT_CSR_CSV = Path("build/sfp_bridge/csr.csv")
+DEFAULT_CSR_CSV = Path("build/sfp_bridge500/csr.csv")
 PACKET_OUTGOING = getattr(socket, "PACKET_OUTGOING", 4)
 COUNTER_MODULUS = 1 << 32
 

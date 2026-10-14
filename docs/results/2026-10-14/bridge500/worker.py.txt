@@ -1,0 +1,21 @@
+"""Run only the fixed, authorized bridge benchmark phases for one hour."""
+from pathlib import Path
+import subprocess,sys,time
+root=Path(__file__).resolve().parent
+request=root/'request.txt'
+request.unlink(missing_ok=True)
+(root/'ready.txt').write_text('ready\n')
+print('Bridge throughput worker ready for one hour.',flush=True)
+deadline=time.monotonic()+3600
+for phase in ['baseline']:
+    subprocess.run([sys.executable,str(root/'run_benchmark.py'),phase])
+while time.monotonic()<deadline:
+    if request.exists():
+        phase=request.read_text().strip();request.unlink()
+        if phase=='stop':break
+        if phase in ('baseline','benchmark','qualify'):
+            result=subprocess.run([sys.executable,str(root/'run_benchmark.py'),phase])
+            print('Completed',phase,'exit',result.returncode,flush=True)
+        else:print('Rejected unknown phase',flush=True)
+    time.sleep(.25)
+print('Bridge throughput worker stopped.',flush=True)

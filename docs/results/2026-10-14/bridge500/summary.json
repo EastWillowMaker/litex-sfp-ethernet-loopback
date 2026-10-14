@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-14",
+  "target_mbps": 500,
+  "status": "PASS",
+  "hardware": "XC7A35T two copper SFPs, two isolated RTL8153 Gigabit adapters",
+  "physical_mapping": {
+    "printed_SFP1_LiteX_SFP0": "enx98fc84e0c4e8",
+    "printed_SFP2_LiteX_SFP1": "enx00e04c5828c8"
+  },
+  "image_sha256": "f9738f3425b08f1e43e3c566e87e3a7281807f33cc06ba8ea4cd4879a0e2025e",
+  "image_location": "build/sfp_bridge500/gateware/dual_sfp_bridge.bit",
+  "system_clock_hz": 125000000,
+  "queue_slots_per_direction": 8,
+  "tcp_test_seconds_per_direction": 30,
+  "tcp_directions_tested_sequentially": true,
+  "throughput_mbps_received": {
+    "left_to_right": 941.405,
+    "right_to_left": 941.403
+  },
+  "baseline_mbps_received": 0.699,
+  "correctness_status": "PASS",
+  "ipv4_unchanged_frames_per_direction": 100,
+  "ipv6_forwarded_per_100_probes_each_direction": 0,
+  "mac_error_and_drop_deltas": {
+    "sfp0": {
+      "preamble_errors": 0,
+      "crc_errors": 0,
+      "drops": 0
+    },
+    "sfp1": {
+      "preamble_errors": 0,
+      "crc_errors": 0,
+      "drops": 0
+    }
+  },
+  "forwarding_counter_deltas": {
+    "sfp0_to_sfp1": {
+      "rx_frames": 2588742,
+      "tx_frames": 2588742,
+      "ipv4_frames": 2588739,
+      "arp_frames": 3,
+      "rejected_frames": 109,
+      "error_frames": 0,
+      "overflow_frames": 0,
+      "ipv6_drops": 109,
+      "unsupported_drops": 0
+    },
+    "sfp1_to_sfp0": {
+      "rx_frames": 2588512,
+      "tx_frames": 2588512,
+      "ipv4_frames": 2588509,
+      "arp_frames": 3,
+      "rejected_frames": 109,
+      "error_frames": 0,
+      "overflow_frames": 0,
+      "ipv6_drops": 109,
+      "unsupported_drops": 0
+    }
+  },
+  "restoration_passed": true,
+  "profiles_unchanged": true,
+  "tests": {
+    "pytest_passed": 171,
+    "host_diagnostics_after_default_change_passed": 41,
+    "real_mac_cases": 19,
+    "mypy_source_files": 17
+  },
+  "routed_timing_ns": {
+    "WNS": 0.685,
+    "WHS": 0.055
+  },
+  "limitations": [
+    "SRAM-only; no bridge flash or cold power-cycle test",
+    "Physical TCP was sequential, not simultaneous bidirectional; simultaneous traffic covered in real-MAC simulation",
+    "Hardware VLAN, malformed and bad-FCS injection not repeated; simulation covers these",
+    "Eight-slot queue remains bounded; sustained backpressure can drop whole frames",
+    "DRC retains two clock-input LUT warnings; external I/O delay constraints incomplete",
+    "Generic host restoration retains previously documented complex-route limitations; wrapper handles automatic NetworkManager profiles"
+  ]
+}

@@ -15,13 +15,20 @@ from sfp_loopback.bridge import EtherTypeBridge
 from sfp_loopback.cable_target import FrameCounterBank, SFPStatus
 from sfp_loopback.target import ClockReset, Platform
 
+DEFAULT_SYS_CLK_FREQ = 125e6
+SUPPORTED_SYS_CLK_FREQS = (50e6, 125e6)
+
 
 class BridgeSoC(SoCCore):
     """Two SFP PHY/MAC ports connected by a hardware EtherType bridge."""
 
-    def __init__(self):
+    def __init__(self, sys_clk_freq=DEFAULT_SYS_CLK_FREQ):
+        if sys_clk_freq not in SUPPORTED_SYS_CLK_FREQS:
+            raise ValueError(
+                "Bridge system clock must be 50 MHz or 125 MHz; "
+                f"got {sys_clk_freq / 1e6:g} MHz."
+            )
         platform = Platform()
-        sys_clk_freq = 50e6
         self.crg = ClockReset(platform, sys_clk_freq)
         super().__init__(
             platform,
@@ -208,7 +215,11 @@ class BridgeSoC(SoCCore):
         )
 
 
-def build_bridge(output_dir="build/sfp_bridge", run=False):
+def build_bridge(
+    output_dir="build/sfp_bridge500",
+    run=False,
+    sys_clk_freq=DEFAULT_SYS_CLK_FREQ,
+):
     """Elaborate or build the separate SRAM-only dual-SFP bridge target."""
     output_dir = Path(output_dir)
     if run:
@@ -217,7 +228,11 @@ def build_bridge(output_dir="build/sfp_bridge", run=False):
             stale_image = gateware_dir / f"dual_sfp_bridge{suffix}"
             if stale_image.exists():
                 stale_image.unlink()
-    builder = Builder(BridgeSoC(), output_dir=str(output_dir), compile_software=False)
+    builder = Builder(
+        BridgeSoC(sys_clk_freq=sys_clk_freq),
+        output_dir=str(output_dir),
+        compile_software=False,
+    )
     builder.build(run=run, build_name="dual_sfp_bridge")
     print(f"CSR map: {Path(builder.csr_csv)}")
     return builder
@@ -226,9 +241,20 @@ def build_bridge(output_dir="build/sfp_bridge", run=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build", action="store_true", help="Run synthesis and implementation.")
-    parser.add_argument("--output-dir", default="build/sfp_bridge")
+    parser.add_argument("--output-dir", default="build/sfp_bridge500")
+    parser.add_argument(
+        "--sys-clock-mhz",
+        type=float,
+        choices=(50.0, 125.0),
+        default=DEFAULT_SYS_CLK_FREQ / 1e6,
+        help="System-clock frequency for comparison builds (default: 125).",
+    )
     args = parser.parse_args()
-    build_bridge(output_dir=args.output_dir, run=args.build)
+    build_bridge(
+        output_dir=args.output_dir,
+        run=args.build,
+        sys_clk_freq=args.sys_clock_mhz * 1e6,
+    )
 
 
 if __name__ == "__main__":

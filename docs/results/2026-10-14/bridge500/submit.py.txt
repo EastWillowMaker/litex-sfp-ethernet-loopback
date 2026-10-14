@@ -1,0 +1,27 @@
+"""Submit one fixed benchmark phase to the authenticated worker."""
+import json,sys,time
+from pathlib import Path
+root=Path(__file__).resolve().parent
+phase=sys.argv[1]
+if phase not in ('baseline','benchmark','qualify'): raise SystemExit('Unknown phase')
+latest=root/'latest-result.json'
+old=latest.read_bytes() if latest.exists() else None
+request=root/'request.txt'
+with request.open('x') as f: f.write(phase+'\n')
+deadline=time.monotonic()+240
+while time.monotonic()<deadline:
+    try:
+        data=latest.read_bytes()
+        if data!=old:
+            result=json.loads(data)
+            if result['result']['phase']==phase:
+                r=result['result']
+                print('Evidence:',result['directory'])
+                for run in r.get('runs',[]): print(run.get('direction',str(run.get('source'))),round(run.get('receiver_bits_per_second',0)/1e6,3),'Mbps')
+                print('Counter deltas:',r.get('directional_counter_deltas'))
+                print('Throughput:',r.get('throughput_passed'),'restoration:',r.get('restore_passed'))
+                if r.get('error'): print(r['error'])
+                raise SystemExit(0 if r['passed'] else (1 if r.get('restore_passed') else 2))
+    except (FileNotFoundError,json.JSONDecodeError): pass
+    time.sleep(.25)
+raise SystemExit('Timed out waiting for worker; inspect worker.log')

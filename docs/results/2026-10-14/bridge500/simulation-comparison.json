@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-14",
+  "test": "tests/test_bridge_mac_integration.py::test_real_macs_sustain_bidirectional_ipv4_bursts_above_500_mbps",
+  "test_source_sha256": "010ca085f837612d0020133d3a66e57816ec5f3ffd0a5ae6a4719bdbf8455b6a",
+  "simulator": "Verilator 5.048 2026-04-26 rev v5.048-56-gc233a3905",
+  "baseline_source": {
+    "revision": "09cf2638bd94259b0ca8ee4b3ce82dd230156325",
+    "path": "sfp_loopback/bridge.py",
+    "sha256": "2ab2bf529d7df01d6f39184ae7eb89f59cede6baa2b8e9cd409e246f91259d44"
+  },
+  "queued_source": {
+    "path": "sfp_loopback/bridge.py",
+    "sha256": "e9f2728f5e98319542f619d4ff57aad694f71e53c563470fbf16e5edc1fa46f4"
+  },
+  "diagnostic_command": "python -m pytest -s -q <isolated-tree>/tests/test_bridge_mac_integration.py::test_real_macs_sustain_bidirectional_ipv4_bursts_above_500_mbps -x; the temporary copy sets sys_half_period_ns to 10 for 50 MHz or 4 for 125 MHz and prints the captured output counts, counters, window, and per-direction rate.",
+  "compiled_runtime": "Vtb +INPUT_PORT=-1 +FRAME_COUNT=48 +EXPECTED_FRAMES=36 +SYS_HALF_PERIOD={10|4} +INPUT_BYTES_FILE=<generated> +INPUT_LENGTHS_FILE=<generated>",
+  "stimulus": {
+    "directions": "Concurrent SFP0-to-SFP1 and SFP1-to-SFP0 physical RX streams",
+    "frames_per_direction": 48,
+    "valid_ipv4_frames": 36,
+    "valid_ipv4_body_bytes": 1514,
+    "ipv6_frames": 6,
+    "bad_fcs_frames": 6,
+    "schedule": "Six valid IPv4 frames, then one IPv6 and one corrupt-FCS IPv4; repeated six times, so a valid frame follows each rejected pair.",
+    "interframe_gap": "12 PHY byte-clock cycles",
+    "phy_clock": "125 MHz asynchronous RX/TX clocks with independent phase offsets",
+    "system_clock": "50 MHz (10 ns half-period) or 125 MHz (4 ns half-period)",
+    "bounded_window": "From burst start to 8192 system-clock cycles after both input bursts finish; duration is read from Verilator simulation time.",
+    "rate_definition": "Per-direction successfully captured Ethernet payload bits divided by the measured bounded window; preamble and FCS excluded. Output equality is asserted before the 500 Mbps threshold."
+  },
+  "results": [
+    {
+      "source": "baseline single-frame",
+      "system_clock_mhz": 50,
+      "result": "FAIL",
+      "output_frames_per_direction": 8,
+      "offered_valid_frames_per_direction": 36,
+      "measured_payload_mbps_per_direction": 141,
+      "elapsed_ns": 684540,
+      "forward0": {
+        "rx_frames": 8,
+        "tx_frames": 8,
+        "rejected_frames": 15,
+        "error_frames": 2,
+        "overflow_frames": 7,
+        "ipv6_drops": 6
+      },
+      "forward1": {
+        "rx_frames": 8,
+        "tx_frames": 8,
+        "rejected_frames": 15,
+        "error_frames": 2,
+        "overflow_frames": 7,
+        "ipv6_drops": 6
+      },
+      "mac_crc_errors": [2, 2],
+      "validation": "Failed exact output comparison: each path transmitted only 8 of 36 expected valid frames (28 missing per path)."
+    },
+    {
+      "source": "baseline single-frame",
+      "system_clock_mhz": 125,
+      "result": "FAIL",
+      "output_frames_per_direction": 18,
+      "offered_valid_frames_per_direction": 36,
+      "measured_payload_mbps_per_direction": 371,
+      "elapsed_ns": 586240,
+      "forward0": {
+        "rx_frames": 18,
+        "tx_frames": 18,
+        "rejected_frames": 30,
+        "error_frames": 6,
+        "overflow_frames": 18,
+        "ipv6_drops": 6
+      },
+      "forward1": {
+        "rx_frames": 18,
+        "tx_frames": 18,
+        "rejected_frames": 30,
+        "error_frames": 6,
+        "overflow_frames": 18,
+        "ipv6_drops": 6
+      },
+      "mac_crc_errors": [6, 6],
+      "validation": "Failed exact output comparison: 36 of the 72 expected valid frames were transmitted; the bridge reported 18 queue-busy overflows per path."
+    },
+    {
+      "source": "8-slot queued bridge",
+      "system_clock_mhz": 50,
+      "result": "FAIL",
+      "output_frames_per_direction": 15,
+      "offered_valid_frames_per_direction": 36,
+      "measured_payload_mbps_per_direction": 265,
+      "elapsed_ns": 684540,
+      "forward0": {
+        "rx_frames": 15,
+        "tx_frames": 15,
+        "rejected_frames": 8,
+        "error_frames": 2,
+        "overflow_frames": 0,
+        "ipv6_drops": 6
+      },
+      "forward1": {
+        "rx_frames": 15,
+        "tx_frames": 15,
+        "rejected_frames": 8,
+        "error_frames": 2,
+        "overflow_frames": 0,
+        "ipv6_drops": 6
+      },
+      "mac_crc_errors": [2, 2],
+      "validation": "Below the target and incomplete. The bridge counters account for 23 of 48 frames per input direction; 25 are missing before the bridge stream counters. The simulation exposes MAC CRC counters but no dedicated MAC CDC/drop counter, so the upstream loss location is inferred, not directly counted."
+    },
+    {
+      "source": "8-slot queued bridge",
+      "system_clock_mhz": 125,
+      "result": "PASS",
+      "output_frames_per_direction": 36,
+      "offered_valid_frames_per_direction": 36,
+      "measured_payload_mbps_per_direction": 743,
+      "elapsed_ns": 586240,
+      "forward0": {
+        "rx_frames": 36,
+        "tx_frames": 36,
+        "ipv4_frames": 36,
+        "rejected_frames": 12,
+        "error_frames": 6,
+        "overflow_frames": 0,
+        "ipv6_drops": 6
+      },
+      "forward1": {
+        "rx_frames": 36,
+        "tx_frames": 36,
+        "ipv4_frames": 36,
+        "rejected_frames": 12,
+        "error_frames": 6,
+        "overflow_frames": 0,
+        "ipv6_drops": 6
+      },
+      "mac_crc_errors": [6, 6],
+      "validation": "All 36 complete physical IPv4 output frames per direction exactly matched the expected preamble, frame bytes, and independently generated zlib FCS; IPv6 and corrupt-FCS frames produced no output. Both directions exceeded 500 Mbps."
+    }
+  ],
+  "focused_suite": {
+    "command": "./.venv/bin/python -m pytest tests/test_bridge_mac_integration.py -x -q",
+    "result": "19 passed in 3.07s",
+    "whitespace_check": "git diff --check -- tests/test_bridge_mac_integration.py: passed"
+  },
+  "limits": [
+    "The simulated Mbps is physical-MAC-seam payload throughput, not host TCP throughput or board qualification.",
+    "The 500 Mbps assertion is applied only to the 125 MHz system-clock configuration; the 50 MHz configuration is retained for diagnostic comparison."
+  ]
+}

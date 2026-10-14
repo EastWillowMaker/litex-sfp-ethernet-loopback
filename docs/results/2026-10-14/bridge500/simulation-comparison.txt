@@ -1,0 +1,93 @@
+Compiled real-MAC burst comparison
+Date: 2026-10-14
+
+Sources
+-------
+Baseline bridge source: git revision 09cf2638bd94259b0ca8ee4b3ce82dd230156325
+Baseline sfp_loopback/bridge.py SHA-256:
+  2ab2bf529d7df01d6f39184ae7eb89f59cede6baa2b8e9cd409e246f91259d44
+Queued sfp_loopback/bridge.py SHA-256:
+  e9f2728f5e98319542f619d4ff57aad694f71e53c563470fbf16e5edc1fa46f4
+Test source SHA-256:
+  010ca085f837612d0020133d3a66e57816ec5f3ffd0a5ae6a4719bdbf8455b6a
+
+Test and commands
+-----------------
+The baseline was extracted from `git archive 09cf263` into an isolated
+temporary tree. The queued runs imported the working queued bridge. Each
+comparison used a temporary copy of the integration test with only the
+`sys_half_period_ns` argument selected as 10 (50 MHz) or 4 (125 MHz), plus a
+temporary metrics print. No source files were changed for the comparison.
+
+Focused pytest invocation:
+
+  /home/eastwillow/Documents/litex-network-router/.venv/bin/python -m pytest \
+    -s -q <isolated-tree>/tests/test_bridge_mac_integration.py::\
+    test_real_macs_sustain_bidirectional_ipv4_bursts_above_500_mbps -x
+
+Compiled with the fixture command:
+
+  verilator --binary --timing --top-module tb -Wno-fatal \
+    --Mdir <temporary-object-dir> -j 2 <bridge_macs.v> <tb.v>
+
+Runtime plusargs included:
+
+  +INPUT_PORT=-1 +FRAME_COUNT=48 +EXPECTED_FRAMES=36 \
+  +SYS_HALF_PERIOD={10|4} +INPUT_BYTES_FILE=<generated> \
+  +INPUT_LENGTHS_FILE=<generated>
+
+Verilator version: 5.048 2026-04-26 rev v5.048-56-gc233a3905.
+
+Stimulus and measurement
+------------------------
+Both ingress directions run concurrently through two real LiteEth MACs at
+125 MHz physical RX/TX clocks with independent phase offsets. Each side sends
+48 wire frames: 36 valid 1514-byte IPv4 bodies, six IPv6 frames, and six
+1514-byte IPv4 frames with one FCS byte corrupted. The order is six valid
+frames, IPv6, bad-FCS, repeated six times. Every frame has a 12-PHY-clock
+interframe gap. A valid frame follows every rejected pair.
+
+The bounded measurement starts immediately before ingress and ends after the
+input bursts plus 8192 system-clock drain cycles. The reported rate is
+per-direction captured Ethernet payload bits divided by this measured
+simulation window; preamble and FCS bytes are excluded. The pass test compares
+every complete output physical frame against the expected preamble, body and
+independently generated zlib FCS before checking the 500 Mbps threshold.
+
+Results
+-------
+
+Configuration                  Frames out/dir  Mbps/dir  Window(ns)  Outcome
+Baseline single-frame, 50 MHz       8 / 36        141       684540    FAIL
+Baseline single-frame, 125 MHz     18 / 36        371       586240    FAIL
+Queued bridge, 50 MHz              15 / 36        265       684540    FAIL
+Queued bridge, 125 MHz             36 / 36        743       586240    PASS
+
+Per-direction bridge counters were identical in both paths:
+
+Baseline single-frame, 50 MHz:
+  rx=8 tx=8 rejected=15 error=2 overflow=7 ipv6_drop=6; MAC CRC errors=2
+Baseline single-frame, 125 MHz:
+  rx=18 tx=18 rejected=30 error=6 overflow=18 ipv6_drop=6; MAC CRC errors=6
+Queued bridge, 50 MHz:
+  rx=15 tx=15 rejected=8 error=2 overflow=0 ipv6_drop=6; MAC CRC errors=2
+Queued bridge, 125 MHz:
+  rx=36 tx=36 rejected=12 error=6 overflow=0 ipv6_drop=6; MAC CRC errors=6
+
+At queued 50 MHz, the bridge counters account for 23 of the 48 physically
+driven frames per ingress direction; 25 do not reach the bridge stream
+counters. The harness exposes MAC CRC status, but no dedicated MAC CDC/drop
+counter, so the upstream loss is inferred and is not directly attributed by a
+hardware counter. At queued 125 MHz, all 48 frames per input direction are
+accounted for, and all 36 valid frames per output direction match exactly.
+
+The current focused suite also passed:
+
+  ./.venv/bin/python -m pytest tests/test_bridge_mac_integration.py -x -q
+  19 passed in 3.07s
+
+`git diff --check -- tests/test_bridge_mac_integration.py` passed.
+
+This is compiled physical-MAC-seam simulation evidence. Mbps values are not
+host TCP throughput or board qualification. Only the 125 MHz case carries the
+>=500 Mbps regression assertion; 50 MHz is retained as a diagnostic mode.

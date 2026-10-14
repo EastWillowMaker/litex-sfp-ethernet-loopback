@@ -1,0 +1,13 @@
+{
+  "sfp_loopback/bridge.py": "e9f2728f5e98319542f619d4ff57aad694f71e53c563470fbf16e5edc1fa46f4",
+  "sfp_loopback/bridge_target.py": "b7f15710fbab0aa273e1160f2b2b2ff55498d1680c5eba7633d2d469b75fa132",
+  "sfp_loopback/bridge_host.py": "b70b4c5f875e630c5d122767503ea5250fef7a55dd4435ed78876baa246ce888",
+  "sfp_loopback/bridge_diagnostics.py": "431df0c28fb5576a1f3bcea21fcfcde8a459bce408e3d5b8755fd2ea06692582",
+  "tests/test_bridge.py": "60a0e7ef5b4ee9a0baff39c8b2888cd8bf8c036cfc3ccc136c9923421a8165f2",
+  "tests/test_bridge_target.py": "fce7076697d3ccbace6638c3c0a10f757bf9edb8cdf932eaf0a2faaf3dc80f47",
+  "tests/test_bridge_mac_integration.py": "010ca085f837612d0020133d3a66e57816ec5f3ffd0a5ae6a4719bdbf8455b6a",
+  "artifacts/bridge500/run_benchmark.py": "6605d3a0fede7b0d0495735149a465adc2c9fa035a4788dbce2e69563d704884",
+  "artifacts/bridge500/submit.py": "6f98368f0aae74b6018254dc16bca7b039623843dc41ca29695ea9ba1f47e2e5",
+  "artifacts/bridge500/worker.py": "3962b89fb7068baac979cd812918049ca056fe9aa8a29c8b1fbb8e32c4842bed",
+  "build/sfp_bridge500/csr.csv": "a02dda0096679a3ced9582936022b11c37e53c3f8df328cf6b17dfcfb220aadf"
+}

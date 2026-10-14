@@ -1,0 +1,14 @@
+{
+  "sent": 100,
+  "forwarded": 0,
+  "unique_forwarded": 0,
+  "missing": 0,
+  "duplicates": 0,
+  "stale": 0,
+  "unexpected": 0,
+  "unexpected_forwarded": 0,
+  "malformed_peer_frames": 0,
+  "ignored_outgoing": 1,
+  "forwarding_expected": false,
+  "passed": true
+}

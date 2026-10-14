@@ -8,20 +8,28 @@ Printed SFP1 is LiteX SFP0; printed SFP2 is LiteX SFP1.
 Each direction buffers a complete frame, then forwards untagged IPv4
 (EtherType 0x0800) and ARP (0x0806) unchanged. IPv6, VLAN/QinQ, unsupported
 EtherTypes, runts, oversize frames and MAC-reported errors are dropped whole.
-Each direction has one 1,514-byte buffer. An arrival while that buffer is
-occupied is rejected whole. There is no MAC learning or CPU forwarding.
+Each direction has eight 2,048-byte queue slots, with a 1,514-byte frame
+limit. Reception and transmission overlap; a slot becomes visible to the
+transmitter only after the complete frame passes validation. An arrival when
+all slots are occupied is rejected whole. There is no MAC learning or CPU
+forwarding.
 
 ## Build and temporary load
 
 Pinned dependencies in `sources.json` and all previous targets remain in use.
+The bridge defaults to a 125 MHz system clock and a separate
+`build/sfp_bridge500` directory. Use `--sys-clock-mhz 50` and another output
+directory for clock comparisons. Always pass the loaded image’s matching
+CSR map to host tests and diagnostics; their defaults also refer to
+`build/sfp_bridge500/csr.csv`.
 
 ```bash
-.venv/bin/python -m sfp_loopback.bridge_target --build --output-dir build/sfp_bridge
+.venv/bin/python -m sfp_loopback.bridge_target --build --output-dir build/sfp_bridge500
 .venv/bin/python -m sfp_loopback.program --load \
-  --output-dir build/sfp_bridge --image-basename dual_sfp_bridge \
+  --output-dir build/sfp_bridge500 --image-basename dual_sfp_bridge \
   --status-profile bridge --report artifacts/bridge/sram-load.json
 .venv/bin/python -m sfp_loopback.bridge_diagnostics \
-  --csr-csv build/sfp_bridge/csr.csv --output artifacts/bridge/status.json
+  --csr-csv build/sfp_bridge500/csr.csv --output artifacts/bridge/status.json
 ```
 
 The bridge profile supports SRAM loading only. The qualified cable-loop SPI
@@ -53,7 +61,7 @@ sudo .venv/bin/python -m sfp_loopback.bridge_host setup \
   --state artifacts/bridge/host-state.json --confirm-isolation
 sudo .venv/bin/python -m sfp_loopback.bridge_host test \
   --state artifacts/bridge/host-state.json \
-  --csr-csv build/sfp_bridge/csr.csv --output-dir artifacts/bridge/hardware
+  --csr-csv build/sfp_bridge500/csr.csv --output-dir artifacts/bridge/hardware
 sudo .venv/bin/python -m sfp_loopback.bridge_host restore \
   --state artifacts/bridge/host-state.json
 ```
@@ -81,17 +89,30 @@ locally under ignored `artifacts/bridge/iperf-runtime`; its executable wrapper i
 ## Performance and evidence
 
 Measure TCP throughput in both directions only after correctness passes.
-500 Mbps is a target rather than a functional acceptance threshold. The reused
-8-bit, 50 MHz MAC datapath has a 400 Mbps byte-transfer ceiling, and the single
-buffer serializes receive and transmit, giving roughly 200 Mbps before further
-overhead. Saved iperf output must establish actual throughput; simulation and
-host loopback benchmarks do not establish FPGA performance.
+The performance goal is at least 500 Mbps received TCP throughput in each
+sequential direction. The 125 MHz, 8-bit system datapath can move one byte per
+cycle, and each direction has an independent queue so receive and transmit
+can overlap. Saved iperf output must establish actual throughput; simulation
+and host loopback benchmarks do not establish FPGA performance.
 
-The routed build passed setup/hold timing with 1.347/0.059 ns slack and no
-unconstrained internal endpoints. DRC reports two warnings for the reused
-clock-input LUT, with no errors. Real-MAC compiled simulation passed 18 cases,
-including bad-FCS rejection and recovery. Physical IPv4/ARP/IPv6 qualification now passes with two RTL8153 adapters.
-The saved exact-client run measured 0.734 Mbps TCP in both directions;
-500 Mbps was not achieved. A separate final cleanup-only run restored both
-NICs and original NetworkManager profiles without reported errors. See
-[the dated results and impact review](results/2026-10-14/bridge/summary.json).
+The earlier 50 MHz single-frame image passed physical IPv4/ARP/IPv6 checks
+but measured only 0.734 Mbps in its final TCP run. Its saved qualification is
+[retained here](results/2026-10-14/bridge/summary.json). A repeat before the
+queue change measured 0.699 Mbps in both directions, with buffer-overflow
+increments during TCP traffic. The new image measured **941.405 Mbps
+left-to-right and 941.403 Mbps
+right-to-left**, each over a separate 30-second TCP run. Correctness passed
+100/100 unchanged IPv4 frames each way, ARP/ping, and zero forwarded IPv6
+probes. MAC error/drop and bridge error/overflow increments were zero over
+the full qualification. Final restoration preserved both adapters, their
+addresses/routes and the automatic NetworkManager profiles without errors.
+
+The 125 MHz routed build met timing (setup 0.685 ns, hold 0.055 ns), using
+16/50 block RAM tiles. All 171 repository tests and the 19-case real-MAC
+subset passed. Physical simultaneous bidirectional TCP was not measured;
+simulation covers simultaneous bursts. Hardware VLAN/malformed/bad-FCS
+injection, cold-power behavior and bridge SPI programming remain untested.
+The queue remains bounded and may drop whole frames under sustained
+backpressure. See [the measured results](results/2026-10-14/bridge500/summary.json)
+and [the impact review](results/2026-10-14/bridge500/impact-review.md), including
+existing DRC warnings, I/O timing limits and host-restoration caveats.

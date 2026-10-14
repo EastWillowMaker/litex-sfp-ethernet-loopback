@@ -1,0 +1,56 @@
+{
+  "links": {
+    "sfp0": {
+      "link_up": 1,
+      "qpll_locked": 1,
+      "tx_ready": 1,
+      "rx_ready": 1,
+      "loss_of_signal": 0,
+      "control_tx_disable": 0
+    },
+    "sfp1": {
+      "link_up": 1,
+      "qpll_locked": 1,
+      "tx_ready": 1,
+      "rx_ready": 1,
+      "loss_of_signal": 0,
+      "control_tx_disable": 0
+    }
+  },
+  "mac_rx": {
+    "sfp0": {
+      "preamble_errors": 0,
+      "crc_errors": 0,
+      "drops": 0
+    },
+    "sfp1": {
+      "preamble_errors": 2656731,
+      "crc_errors": 6510,
+      "drops": 0
+    }
+  },
+  "forwarding": {
+    "sfp0_to_sfp1": {
+      "rx_frames": 3107283,
+      "tx_frames": 3107283,
+      "ipv4_frames": 3107278,
+      "arp_frames": 5,
+      "rejected_frames": 238,
+      "error_frames": 0,
+      "overflow_frames": 0,
+      "ipv6_drops": 238,
+      "unsupported_drops": 0
+    },
+    "sfp1_to_sfp0": {
+      "rx_frames": 3107989,
+      "tx_frames": 3107989,
+      "ipv4_frames": 3107984,
+      "arp_frames": 5,
+      "rejected_frames": 3862,
+      "error_frames": 3616,
+      "overflow_frames": 0,
+      "ipv6_drops": 246,
+      "unsupported_drops": 0
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "phase": "qualify",
+  "target_mbps": 500,
+  "passed": true,
+  "restoration": {
+    "namespaces": {
+      "restored": true,
+      "errors": []
+    },
+    "enx98fc84e0c4e8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 1"
+      },
+      "passed": true
+    },
+    "enx00e04c5828c8": {
+      "saved": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "current": {
+        "available": true,
+        "managed": true,
+        "connection": "Wired connection 2"
+      },
+      "passed": true
+    }
+  },
+  "source_sha256": "b70b4c5f875e630c5d122767503ea5250fef7a55dd4435ed78876baa246ce888",
+  "profiles_before": {
+    "Wired connection 1": "864ebd1d-48cd-3cc5-bddd-93475bb4700e\nenx98fc84e0c4e8\n\nauto\nauto\n",
+    "Wired connection 2": "1b47d51a-d957-3837-a602-e00f9afb62d7\nenx00e04c5828c8\n\nauto\nauto\n"
+  },
+  "profile_file_hashes_before": {
+    "/run/NetworkManager/system-connections/Wired connection 1.nmconnection": "6fa0b5e4752c3d43902dcb25a49ebcfff8c4eeda21848b0142bbc02c12303209",
+    "/run/NetworkManager/system-connections/Wired connection 2.nmconnection": "c02d6c268709eb77b46f7c908bf27c5882cc6fd9b682e74acd439b21be976b1c"
+  },
+  "correctness_status": "PASS",
+  "runs": [
+    {
+      "source": "left",
+      "destination": "right",
+      "status": "PASS",
+      "throughput_mbps_received": 941.405,
+      "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+      "sender_bits_per_second": 942213050.5560963,
+      "receiver_bits_per_second": 941404739.79786,
+      "client_returncode": 0,
+      "server_returncode": 0,
+      "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-left-to-right.json",
+      "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-left-to-right-server.json"
+    },
+    {
+      "source": "right",
+      "destination": "left",
+      "status": "PASS",
+      "throughput_mbps_received": 941.403,
+      "throughput_basis": "iperf3 end.sum_received.bits_per_second; measured TCP payload rate",
+      "sender_bits_per_second": 942310962.5847585,
+      "receiver_bits_per_second": 941402763.0864955,
+      "client_returncode": 0,
+      "server_returncode": 0,
+      "json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-right-to-left.json",
+      "server_json": "/home/eastwillow/Documents/litex-network-router/artifacts/bridge500/20261014-220115-qualify/qualification/iperf-right-to-left-server.json"
+    }
+  ],
+  "throughput_passed": true,
+  "directional_counter_deltas": {
+    "sfp0_to_sfp1": {
+      "rx_frames": 2588742,
+      "tx_frames": 2588742,
+      "ipv4_frames": 2588739,
+      "arp_frames": 3,
+      "rejected_frames": 109,
+      "error_frames": 0,
+      "overflow_frames": 0,
+      "ipv6_drops": 109,
+      "unsupported_drops": 0
+    },
+    "sfp1_to_sfp0": {
+      "rx_frames": 2588512,
+      "tx_frames": 2588512,
+      "ipv4_frames": 2588509,
+      "arp_frames": 3,
+      "rejected_frames": 109,
+      "error_frames": 0,
+      "overflow_frames": 0,
+      "ipv6_drops": 109,
+      "unsupported_drops": 0
+    }
+  },
+  "profile_reload_errors": [],
+  "final_host_verification": {
+    "owned_namespaces_absent": true,
+    "enx98fc84e0c4e8": {
+      "identity": true,
+      "mtu": true,
+      "up": true,
+      "test_address_absent": true,
+      "saved_addresses_present": true,
+      "saved_routes_present": true
+    },
+    "enx00e04c5828c8": {
+      "identity": true,
+      "mtu": true,
+      "up": true,
+      "test_address_absent": true,
+      "saved_addresses_present": true,
+      "saved_routes_present": true
+    }
+  },
+  "restore_passed": true,
+  "profiles_after": {
+    "Wired connection 1": "864ebd1d-48cd-3cc5-bddd-93475bb4700e\nenx98fc84e0c4e8\n\nauto\nauto\n",
+    "Wired connection 2": "1b47d51a-d957-3837-a602-e00f9afb62d7\nenx00e04c5828c8\n\nauto\nauto\n"
+  },
+  "profiles_unchanged": true
+}
